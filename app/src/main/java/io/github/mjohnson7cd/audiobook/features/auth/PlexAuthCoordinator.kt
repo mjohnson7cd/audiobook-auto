@@ -38,6 +38,10 @@ import javax.inject.Inject
  *
  * @param plexLoginRepo Repository for Plex API calls (PIN creation and token polling)
  * @param scope Coroutine scope for async operations (use viewModelScope for ViewModels)
+ *
+ * Use the secondary constructor with `useLinkCode = true` for the in-car sign-in: there is no
+ * browser, so a short plex.tv/link PIN is created instead of a strong OAuth PIN, and the user
+ * needs longer than 2 minutes to type it on another device ([LINK_CODE_TIMEOUT_MS]).
  */
 class PlexAuthCoordinator
     @Inject
@@ -45,6 +49,23 @@ class PlexAuthCoordinator
         private val plexLoginRepo: IPlexLoginRepo,
         private val scope: CoroutineScope,
     ) {
+        private var timeoutMs: Long = TIMEOUT_MS
+        private var useLinkCode: Boolean = false
+
+        /**
+         * @param timeoutMs How long to poll before giving up with [PlexAuthState.Timeout]
+         * @param useLinkCode Create a short plex.tv/link PIN instead of a strong OAuth PIN
+         */
+        constructor(
+            plexLoginRepo: IPlexLoginRepo,
+            scope: CoroutineScope,
+            timeoutMs: Long,
+            useLinkCode: Boolean,
+        ) : this(plexLoginRepo, scope) {
+            this.timeoutMs = timeoutMs
+            this.useLinkCode = useLinkCode
+        }
+
         companion object {
             /** Default polling interval in milliseconds */
             const val POLLING_INTERVAL_MS = 1500L
@@ -61,6 +82,12 @@ class PlexAuthCoordinator
              * been waiting this long the App Link almost certainly didn't fire.
              */
             const val MANUAL_FALLBACK_AFTER_MS = 20_000L
+
+            /**
+             * Timeout for the plex.tv/link code flow. The user has to pick up another device and
+             * type the code, and Plex keeps short PINs valid for ~15 minutes.
+             */
+            const val LINK_CODE_TIMEOUT_MS = 10 * 60_000L
         }
 
         private val _state = MutableStateFlow<PlexAuthState>(PlexAuthState.Idle)
@@ -106,7 +133,8 @@ class PlexAuthCoordinator
 
             try {
                 // Create PIN via PlexLoginRepo
-                val oAuthResponse = plexLoginRepo.postOAuthPin()
+                val oAuthResponse =
+                    if (useLinkCode) plexLoginRepo.postLinkPin() else plexLoginRepo.postOAuthPin()
                 if (oAuthResponse == null) {
                     Timber.e("Failed to create authentication PIN - received null response")
                     _state.value = PlexAuthState.Error("Failed to create authentication PIN")
@@ -175,7 +203,7 @@ class PlexAuthCoordinator
                         val elapsed = System.currentTimeMillis() - startTime
 
                         // Check timeout (2 minutes)
-                        if (elapsed > TIMEOUT_MS) {
+                        if (elapsed > timeoutMs) {
                             Timber.w("OAuth authentication timed out after ${elapsed}ms")
                             _state.value = PlexAuthState.Timeout
                             AuthCoordinatorSingleton.unregister()

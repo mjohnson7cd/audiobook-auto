@@ -29,6 +29,12 @@ interface IPlexLoginRepo {
     suspend fun postOAuthPin(): OAuthResponse?
 
     /**
+     * POST a short, human-typeable PIN for the plex.tv/link flow (no browser on this device).
+     * Polling via [checkForOAuthAccessToken] works exactly like the OAuth PIN.
+     */
+    suspend fun postLinkPin(): OAuthResponse?
+
+    /**
      * Chooses a user, updates the auth token to match the user in the [PlexConfig], sets
      * [PlexPrefsRepo.user] to [responseUser], changes [loginEvent] to [LOGGED_IN_NO_SERVER_CHOSEN]
      *
@@ -91,10 +97,14 @@ class PlexLoginRepo
         // Coroutine scope for database operations (uses SupervisorJob to prevent cancellation cascading)
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-        override suspend fun postOAuthPin(): OAuthResponse? {
+        override suspend fun postOAuthPin(): OAuthResponse? = createPin { plexLoginService.postAuthPin() }
+
+        override suspend fun postLinkPin(): OAuthResponse? = createPin { plexLoginService.postLinkPin() }
+
+        private suspend fun createPin(request: suspend () -> OAuthResponse): OAuthResponse? {
             return try {
                 _loginState.postEvent(AWAITING_LOGIN_RESULTS)
-                val pin = plexLoginService.postAuthPin()
+                val pin = request()
                 plexPrefsRepo.oAuthTempId = pin.id
                 pin
             } catch (e: Throwable) {

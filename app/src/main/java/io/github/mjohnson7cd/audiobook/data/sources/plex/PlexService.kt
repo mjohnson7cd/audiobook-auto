@@ -13,6 +13,13 @@ interface PlexLoginService {
     @POST("https://plex.tv/api/v2/pins.json?strong=true")
     suspend fun postAuthPin(): OAuthResponse
 
+    /**
+     * Creates a short (4 character) PIN that the user can type at https://plex.tv/link.
+     * Used where no browser is available on the device (e.g. Android Automotive OS).
+     */
+    @POST("https://plex.tv/api/v2/pins.json?strong=false")
+    suspend fun postLinkPin(): OAuthResponse
+
     @GET("https://plex.tv/api/v2/pins/{id}.json")
     suspend fun getAuthPin(
         @Path("id") id: Long,
