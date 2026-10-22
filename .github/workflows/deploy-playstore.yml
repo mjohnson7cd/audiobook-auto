@@ -103,7 +103,9 @@ jobs:
           PLAY_CREDENTIALS_FILE: play-credentials.json
           PLAY_STORE_SERVICE_ACCOUNT_JSON: "true"
         run: |
-          ./gradlew publishBundle --track=${{ inputs.track }} --no-daemon -x lintVitalRelease
+          # Mobile (phone) bundle -> standard track. The automotive bundle must go to the
+          # dedicated AAOS track: ./gradlew publishAutomotiveReleaseBundle --track=automotive:<track>
+          ./gradlew publishMobileReleaseBundle --track=${{ inputs.track }} --no-daemon -x lintVitalMobileRelease
 
       - name: Clean up credentials
         if: always()

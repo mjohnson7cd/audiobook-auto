@@ -1,6 +1,9 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
+/** Automotive builds share the applicationId; offset keeps their versionCodes distinct on Play. */
+val AUTOMOTIVE_VERSION_CODE_OFFSET = 1_000_000
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -30,6 +33,27 @@ android {
         versionName = "0.62.6"
 
         testInstrumentationRunner = "io.github.mjohnson7cd.audiobook.application.ChronicleTestRunner"
+
+        buildConfigField("boolean", "IS_AUTOMOTIVE", "false")
+    }
+
+    // Form-factor flavors. Both share the same applicationId (one Play listing), but the
+    // automotive build ships on the dedicated "Android Automotive OS only" Play track, so its
+    // versionCode must never collide with the mobile one.
+    flavorDimensions += "formfactor"
+    productFlavors {
+        create("mobile") {
+            dimension = "formfactor"
+        }
+        create("automotive") {
+            dimension = "formfactor"
+            // e.g. mobile 69 -> automotive 1000069
+            versionCode = AUTOMOTIVE_VERSION_CODE_OFFSET + (defaultConfig.versionCode ?: 0)
+            versionNameSuffix = "-automotive"
+            // Google built-in (GM Ultium EVs) is Android 12+; API 30 matches main and the AAOS minimum.
+            minSdk = 30
+            buildConfigField("boolean", "IS_AUTOMOTIVE", "true")
+        }
     }
 
     signingConfigs {
@@ -150,6 +174,15 @@ play {
     // For apps not yet published to production, releases must be drafts
     // Change to COMPLETED once the app is live on Play Store
     releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.DRAFT)
+}
+
+// AAOS media apps must ship on the dedicated "Android Automotive OS only" form-factor track,
+// which the Play Developer API exposes with an "automotive:" prefix. Note: a --track CLI flag
+// overrides this, so publish the automotive variant with e.g. --track=automotive:internal.
+android.playConfigs {
+    register("automotive") {
+        track.set("automotive:internal")
+    }
 }
 
 // KSP configuration for Room
