@@ -76,6 +76,7 @@
             android:name="io.github.mjohnson7cd.audiobook.features.player.MediaPlayerService"
             android:enabled="true"
             android:exported="true"
+            android:stopWithTask="false"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
