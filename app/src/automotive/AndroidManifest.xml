@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android Automotive OS (Google built-in) overlay, merged over src/main/AndroidManifest.xml.
+
+  AAOS media-app rules (https://developer.android.com/training/cars/media/automotive-os):
+  - declare android.hardware.type.automotive + com.android.automotive meta-data
+  - no launcher activity: the car's media center is the entry point (MediaBrowserService)
+  - no Android Auto (projection) meta-data
+  - sign-in / settings activities must NOT be distraction-optimized (parked-only)
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="true" />
+
+    <!-- Hardware a car head unit may lack; never let these filter us out of the car Play Store. -->
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.screen.portrait"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.screen.landscape"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false" />
+
+    <application
+        android:appCategory="audio"
+        tools:targetApi="o">
+
+        <meta-data
+            android:name="com.android.automotive"
+            android:resource="@xml/automotive_app_desc" />
+
+        <!-- Android Auto (phone projection) descriptors must not ship in the AAOS build. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            tools:node="remove" />
+        <meta-data
+            android:name="com.google.android.gms.car.notification.SmallIcon"
+            tools:node="remove" />
+
+        <!-- No Cast in the car. -->
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            tools:node="remove" />
+
+        <!-- Phone UI stays in the APK (shared code) but is not launchable: no launcher filter. -->
+        <activity
+            android:name="io.github.mjohnson7cd.audiobook.application.MainActivity"
+            android:exported="false"
+            tools:replace="android:exported">
+            <intent-filter tools:node="removeAll" />
+        </activity>
+
+        <!-- Browser OAuth return is unreachable in the car (no browser); sign-in uses plex.tv/link. -->
+        <activity
+            android:name="io.github.mjohnson7cd.audiobook.features.auth.AuthReturnActivity"
+            tools:node="remove" />
+
+    </application>
+
+</manifest>

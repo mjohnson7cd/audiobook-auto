@@ -3,6 +3,7 @@ package io.github.mjohnson7cd.audiobook.injection.modules
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
+import android.content.Intent
 import android.hardware.SensorManager
 import android.media.AudioManager
 import android.media.ToneGenerator
@@ -23,6 +24,7 @@ import io.github.mjohnson7cd.audiobook.application.MainActivity
 import io.github.mjohnson7cd.audiobook.data.sources.plex.APP_NAME
 import io.github.mjohnson7cd.audiobook.data.sources.plex.PlexHttpDataSourceFactory
 import io.github.mjohnson7cd.audiobook.data.sources.plex.PlexPrefsRepo
+import io.github.mjohnson7cd.audiobook.features.car.CarIntegration
 import io.github.mjohnson7cd.audiobook.features.player.*
 import io.github.mjohnson7cd.audiobook.features.player.MediaPlayerService.Companion.EXOPLAYER_BACK_BUFFER_DURATION_MILLIS
 import io.github.mjohnson7cd.audiobook.features.player.MediaPlayerService.Companion.EXOPLAYER_MAX_BUFFER_DURATION_MILLIS
@@ -97,8 +99,14 @@ class ServiceModule(private val service: MediaPlayerService) {
     @Provides
     @ServiceScope
     fun pendingIntent(): PendingIntent =
-        service.packageManager.getLaunchIntentForPackage(service.packageName).let { sessionIntent ->
-            sessionIntent?.putExtra(MainActivity.FLAG_OPEN_ACTIVITY_TO_CURRENTLY_PLAYING, true)
+        // The automotive (AAOS) build has no launcher activity, so there is no launch intent there;
+        // fall back to the flavor's car entry point instead of crashing on a null intent.
+        (
+            service.packageManager.getLaunchIntentForPackage(service.packageName)
+                ?: CarIntegration.sessionActivityIntent(service)
+                ?: Intent(service, MainActivity::class.java)
+        ).let { sessionIntent ->
+            sessionIntent.putExtra(MainActivity.FLAG_OPEN_ACTIVITY_TO_CURRENTLY_PLAYING, true)
             PendingIntent.getActivity(
                 service,
                 MainActivity.REQUEST_CODE_OPEN_APP_TO_CURRENTLY_PLAYING,
