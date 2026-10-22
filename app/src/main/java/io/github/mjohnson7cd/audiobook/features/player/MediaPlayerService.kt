@@ -50,6 +50,7 @@ import io.github.mjohnson7cd.audiobook.data.model.toMediaItem
 import io.github.mjohnson7cd.audiobook.data.sources.plex.*
 import io.github.mjohnson7cd.audiobook.data.sources.plex.IPlexLoginRepo.LoginState.*
 import io.github.mjohnson7cd.audiobook.data.sources.plex.model.getDuration
+import io.github.mjohnson7cd.audiobook.features.car.CarErrorResolution
 import io.github.mjohnson7cd.audiobook.features.currentlyplaying.CurrentlyPlaying
 import io.github.mjohnson7cd.audiobook.features.player.SleepTimer.Companion.ARG_SLEEP_TIMER_ACTION
 import io.github.mjohnson7cd.audiobook.features.player.SleepTimer.Companion.ARG_SLEEP_TIMER_DURATION_MILLIS
@@ -254,6 +255,15 @@ class MediaPlayerService :
 
     private var sessionErrorMessage: String? = null
     private var isErrorState: Boolean = false
+
+    /**
+     * "Sign in" error-resolution extras for car hosts; null on the mobile flavor, where sign-in
+     * happens in the phone UI. Attached to error states while the user isn't fully logged in.
+     */
+    private val signInResolutionExtras: Bundle? by lazy { CarErrorResolution.signInExtras(this) }
+
+    private fun signInResolutionIfNeeded(): Bundle? =
+        signInResolutionExtras?.takeIf { plexLoginRepo.loginEvent.value?.peekContent() != LOGGED_IN_FULLY }
     private var sessionCustomActions: List<PlaybackStateCompat.CustomAction> = emptyList()
     private val timelineWindow = Timeline.Window()
 
@@ -344,6 +354,9 @@ class MediaPlayerService :
         plexConfig.connectionState.observeForever(serverChangedListener)
         plexLoginRepo.loginEvent.observeForever(loginStateObserver)
         librarySyncRepository.isRefreshing.observeForever(librarySyncObserver)
+        if (BuildConfig.IS_AUTOMOTIVE) {
+            plexConfig.isConnected.observeForever(carLibrarySyncObserver)
+        }
     }
 
     private fun updateAudioAttrs(exoPlayer: ExoPlayer) {
@@ -403,6 +416,7 @@ class MediaPlayerService :
                     0f,
                 )
                 .setErrorMessage(errorCode, errorMessage)
+                .apply { signInResolutionIfNeeded()?.let { setExtras(it) } }
                 .build()
 
         mediaSession.setPlaybackState(errorState)
@@ -524,6 +538,27 @@ class MediaPlayerService :
         }
 
     /**
+     * AAOS only: the phone build syncs the library from its Home/Library screens, which don't
+     * exist in the car. Sync from here instead whenever the server connects and the local
+     * library is empty or older than the configured refresh rate.
+     */
+    private val carLibrarySyncObserver =
+        Observer<Boolean> { isConnected ->
+            if (!isConnected || plexLoginRepo.loginEvent.value?.peekContent() != LOGGED_IN_FULLY) {
+                return@Observer
+            }
+            if (librarySyncRepository.isRefreshing.value == true) return@Observer
+            serviceScope.launch(Injector.get().unhandledExceptionHandler()) {
+                val minutesSinceRefresh = (System.currentTimeMillis() - prefsRepo.lastRefreshTimeStamp) / 60_000L
+                val isEmpty = withContext(Dispatchers.IO) { bookRepository.getBookCount() } == 0
+                if (isEmpty || minutesSinceRefresh > prefsRepo.refreshRateMinutes) {
+                    Timber.i("[AAOS] Syncing library (empty=$isEmpty, ${minutesSinceRefresh}min since last sync)")
+                    librarySyncRepository.refreshLibrary()
+                }
+            }
+        }
+
+    /**
      * Change the tracks in the player to refer to the new server url. Because [PlexConfig] is a
      * Singleton we don't need to keep track of state here
      */
@@ -580,6 +615,7 @@ class MediaPlayerService :
                     .setActions(basePlaybackActions())
                     .setState(PlaybackStateCompat.STATE_ERROR, 0L, 0f)
                     .setErrorMessage(PlaybackStateCompat.ERROR_CODE_APP_ERROR, sessionErrorMessage)
+            signInResolutionIfNeeded()?.let { builder.setExtras(it) }
 
             sessionCustomActions.forEach(builder::addCustomAction)
             return builder.build()
@@ -654,6 +690,7 @@ class MediaPlayerService :
         sessionCustomActions.forEach(builder::addCustomAction)
         sessionErrorMessage?.let {
             builder.setErrorMessage(PlaybackStateCompat.ERROR_CODE_APP_ERROR, it)
+            signInResolutionIfNeeded()?.let { extras -> builder.setExtras(extras) }
         }
         return builder.build()
     }
@@ -743,6 +780,7 @@ class MediaPlayerService :
 
         plexLoginRepo.loginEvent.removeObserver(loginStateObserver)
         librarySyncRepository.isRefreshing.removeObserver(librarySyncObserver)
+        plexConfig.isConnected.removeObserver(carLibrarySyncObserver)
 
         // Send one last update to local/remote servers that playback has stopped
         val metadata = mediaController.metadata
@@ -901,7 +939,7 @@ class MediaPlayerService :
                                         NOT_LOGGED_IN -> {
                                             makeMessageItem(
                                                 title = getString(R.string.auto_access_error_not_logged_in),
-                                                subtitle = "Open the Chronicle app on your phone to log in",
+                                                subtitle = getString(R.string.auto_not_logged_in_subtitle),
                                                 iconRes = R.drawable.ic_lock_white_24dp,
                                                 mediaId = "__error_not_logged_in__",
                                             )
@@ -929,7 +967,7 @@ class MediaPlayerService :
                                         }
                                         else -> {
                                             makeMessageItem(
-                                                title = "Please open Chronicle app on the phone to complete setup",
+                                                title = getString(R.string.auto_error_complete_required_steps_on_phone),
                                                 iconRes = R.drawable.ic_error_outline_white,
                                                 mediaId = "__error_unknown__",
                                             )
@@ -1123,8 +1161,17 @@ class MediaPlayerService :
             }
             else -> {
                 // Return normal root even if not logged in - onLoadChildren() will display appropriate message
-                if (plexLoginRepo.loginEvent.value?.peekContent() != LOGGED_IN_FULLY) {
+                val loginState = plexLoginRepo.loginEvent.value?.peekContent()
+                if (loginState != LOGGED_IN_FULLY) {
                     Timber.w("[AndroidAuto] Not fully logged in - will show message in browse tree")
+                    if (signInResolutionExtras != null) {
+                        // AAOS: there is no phone app to finish setup in, so surface an error with a
+                        // "Sign in" resolution button right away (Google's car-app sign-in pattern).
+                        setPlaybackStateError(
+                            PlaybackStateCompat.ERROR_CODE_AUTHENTICATION_EXPIRED,
+                            getString(loginErrorMessageRes(loginState)),
+                        )
+                    }
                 } else {
                     Timber.d("[AndroidAuto] Access granted")
                     setSessionCustomErrorMessage(null)
@@ -1133,6 +1180,14 @@ class MediaPlayerService :
             }
         }
     }
+
+    private fun loginErrorMessageRes(loginState: IPlexLoginRepo.LoginState?): Int =
+        when (loginState) {
+            LOGGED_IN_NO_USER_CHOSEN -> R.string.auto_access_error_no_user_chosen
+            LOGGED_IN_NO_SERVER_CHOSEN -> R.string.auto_access_error_no_server_chosen
+            LOGGED_IN_NO_LIBRARY_CHOSEN -> R.string.auto_access_error_no_library_chosen
+            else -> R.string.auto_access_error_not_logged_in
+        }
 
     private val playerEventListener =
         object : Player.Listener {

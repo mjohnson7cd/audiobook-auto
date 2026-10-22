@@ -271,7 +271,8 @@ class SharedPreferencesPrefsRepo
 
         private val defaultAllowAuto = true
         override var allowAuto: Boolean
-            get() = sharedPreferences.getBoolean(KEY_ALLOW_AUTO, defaultAllowAuto)
+            // AAOS build: the car *is* the only UI, so "Allow Auto" can't be turned off.
+            get() = BuildConfig.IS_AUTOMOTIVE || sharedPreferences.getBoolean(KEY_ALLOW_AUTO, defaultAllowAuto)
             set(value) = sharedPreferences.edit().putBoolean(KEY_ALLOW_AUTO, value).apply()
 
         private val defaultVoiceSearchFallback = true
