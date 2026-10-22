@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.security.KeyStore
 
 @RunWith(RobolectricTestRunner::class)
 class CredentialManagerTest {
@@ -16,15 +18,28 @@ class CredentialManagerTest {
 
     @Before
     fun setup() {
+        // AndroidKeyStore is not available in Robolectric unit tests (JVM). Skip these tests
+        // unless running as instrumented tests on a real device/emulator.
+        assumeTrue("AndroidKeyStore unavailable in Robolectric", androidKeyStoreAvailable())
         context = ApplicationProvider.getApplicationContext()
         credentialManager = CredentialManager(context)
         // Clean state before each test
         credentialManager.clearAllCredentials()
     }
 
+    private fun androidKeyStoreAvailable(): Boolean =
+        try {
+            KeyStore.getInstance("AndroidKeyStore")
+            true
+        } catch (e: Exception) {
+            false
+        }
+
     @After
     fun tearDown() {
-        credentialManager.clearAllCredentials()
+        if (::credentialManager.isInitialized) {
+            credentialManager.clearAllCredentials()
+        }
     }
 
     @Test
