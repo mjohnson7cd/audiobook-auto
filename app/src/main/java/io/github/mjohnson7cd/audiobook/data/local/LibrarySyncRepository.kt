@@ -413,9 +413,10 @@ class LibrarySyncRepository
                     
                     if (success) {
                         // Check if it was newly downloaded or already cached
+                        val safeId = book.id.replace(":", "_")
                         val cacheFile = java.io.File(
                             io.github.mjohnson7cd.audiobook.features.car.CoverArtCache.getCacheDir(context),
-                            "${book.id}.jpg"
+                            "$safeId.jpg"
                         )
                         if (cacheFile.lastModified() > System.currentTimeMillis() - 5000) {
                             downloaded++

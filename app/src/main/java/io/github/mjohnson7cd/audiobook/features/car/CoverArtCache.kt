@@ -32,7 +32,8 @@ object CoverArtCache {
      * Format: file:///data/.../cache/cover_art/{bookId}.jpg
      */
     fun getCachedCoverUri(context: Context, bookId: String): android.net.Uri? {
-        val file = File(getCacheDir(context), "$bookId.jpg")
+        val safeId = bookId.replace(":", "_")
+        val file = File(getCacheDir(context), "$safeId.jpg")
         return if (file.exists()) {
             android.net.Uri.fromFile(file)
         } else {
@@ -81,7 +82,8 @@ object CoverArtCache {
         thumbPath: String,
         plexConfig: PlexConfig
     ): Boolean = withContext(Dispatchers.IO) {
-        val cacheFile = File(getCacheDir(context), "$bookId.jpg")
+        val safeId = bookId.replace(":", "_")
+        val cacheFile = File(getCacheDir(context), "$safeId.jpg")
         
         // Skip if already cached
         if (cacheFile.exists()) {
