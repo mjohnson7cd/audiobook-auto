@@ -14,22 +14,33 @@
         android:paddingEnd="48dp"
         android:paddingBottom="32dp">
 
-        <!-- Back button at the top -->
-        <Button
-            android:id="@+id/car_settings_back"
-            style="@style/CarButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="← Back"
-            android:textSize="18sp" />
-
-        <TextView
-            style="@style/CarText.Title"
-            android:layout_width="wrap_content"
+        <!-- Header with back button and title -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            android:text="@string/car_settings_title" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/car_settings_back"
+                style="@style/CarButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:minWidth="0dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="←"
+                android:textSize="32sp" />
+
+            <TextView
+                style="@style/CarText.Title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/car_settings_title" />
+        </LinearLayout>
 
         <TextView
             style="@style/CarText.Body"
