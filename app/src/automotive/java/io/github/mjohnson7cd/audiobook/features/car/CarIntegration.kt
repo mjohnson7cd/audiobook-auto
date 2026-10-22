@@ -11,7 +11,8 @@ import android.content.Intent
  */
 object CarIntegration {
     /** Launches the plex.tv/link code sign-in; used as the MediaSession error resolution. */
-    fun signInIntent(context: Context): Intent? = null
+    fun signInIntent(context: Context): Intent? =
+        Intent(context, CarSignInActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     /** The AAOS build has no launcher activity; the car settings screen stands in for it. */
     fun sessionActivityIntent(context: Context): Intent? = null

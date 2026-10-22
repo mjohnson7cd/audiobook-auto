@@ -69,6 +69,17 @@
             android:name="io.github.mjohnson7cd.audiobook.features.auth.AuthReturnActivity"
             tools:node="remove" />
 
+        <!--
+          In-car sign-in via plex.tv/link code. Parked-only: intentionally NO
+          distractionOptimized meta-data. Launched as the MediaSession error-resolution intent.
+        -->
+        <activity
+            android:name="io.github.mjohnson7cd.audiobook.features.car.CarSignInActivity"
+            android:exported="false"
+            android:label="@string/car_sign_in_title"
+            android:launchMode="singleTask"
+            android:theme="@style/CarTheme" />
+
     </application>
 
 </manifest>
