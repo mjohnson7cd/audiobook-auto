@@ -38,7 +38,7 @@ graph TB
 
 ## Presentation Layer
 
-Located in [`features/`](../../app/src/main/java/local/oss/chronicle/features/)
+Located in [`features/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/)
 
 The presentation layer contains all UI-related code organized by feature. Each feature module follows the MVVM pattern.
 
@@ -46,14 +46,14 @@ The presentation layer contains all UI-related code organized by feature. Each f
 
 | Feature | Purpose |
 |---------|---------|
-| [`login/`](../../app/src/main/java/local/oss/chronicle/features/login/) | OAuth flow, server/user/library selection |
-| [`home/`](../../app/src/main/java/local/oss/chronicle/features/home/) | Recently listened, recently added books |
-| [`library/`](../../app/src/main/java/local/oss/chronicle/features/library/) | Full audiobook library with search/filter |
-| [`bookdetails/`](../../app/src/main/java/local/oss/chronicle/features/bookdetails/) | Audiobook details, chapters, playback |
-| [`collections/`](../../app/src/main/java/local/oss/chronicle/features/collections/) | Plex collections browsing |
-| [`currentlyplaying/`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/) | Full-screen player UI |
-| [`player/`](../../app/src/main/java/local/oss/chronicle/features/player/) | MediaPlayerService, ExoPlayer integration |
-| [`settings/`](../../app/src/main/java/local/oss/chronicle/features/settings/) | App preferences |
+| [`login/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/login/) | OAuth flow, server/user/library selection |
+| [`home/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/home/) | Recently listened, recently added books |
+| [`library/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/library/) | Full audiobook library with search/filter |
+| [`bookdetails/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/) | Audiobook details, chapters, playback |
+| [`collections/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/collections/) | Plex collections browsing |
+| [`currentlyplaying/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/) | Full-screen player UI |
+| [`player/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/) | MediaPlayerService, ExoPlayer integration |
+| [`settings/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/) | App preferences |
 
 ### Feature Module Structure
 
@@ -82,15 +82,15 @@ The domain layer contains business logic and domain models. In Chronicle, busine
 
 ### Domain Models
 
-Located in [`data/model/`](../../app/src/main/java/local/oss/chronicle/data/model/):
+Located in [`data/model/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/):
 
 | Model | Purpose |
 |-------|---------|
-| [`Audiobook`](../../app/src/main/java/local/oss/chronicle/data/model/Audiobook.kt) | Core audiobook entity with metadata |
-| [`MediaItemTrack`](../../app/src/main/java/local/oss/chronicle/data/model/MediaItemTrack.kt) | Individual audio track/file |
-| [`Chapter`](../../app/src/main/java/local/oss/chronicle/data/model/Chapter.kt) | Chapter marker within a track |
-| [`Collection`](../../app/src/main/java/local/oss/chronicle/data/model/Collection.kt) | Plex collection |
-| [`PlexLibrary`](../../app/src/main/java/local/oss/chronicle/data/model/PlexLibrary.kt) | Plex library information |
+| [`Audiobook`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Audiobook.kt) | Core audiobook entity with metadata |
+| [`MediaItemTrack`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/MediaItemTrack.kt) | Individual audio track/file |
+| [`Chapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Chapter.kt) | Chapter marker within a track |
+| [`Collection`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Collection.kt) | Plex collection |
+| [`PlexLibrary`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/PlexLibrary.kt) | Plex library information |
 
 ### Business Logic Distribution
 
@@ -104,43 +104,43 @@ Located in [`data/model/`](../../app/src/main/java/local/oss/chronicle/data/mode
 
 ## Data Layer
 
-Located in [`data/`](../../app/src/main/java/local/oss/chronicle/data/)
+Located in [`data/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/)
 
 The data layer handles all data operations, including local storage, remote API calls, and caching.
 
 ### Local Storage
 
-Located in [`data/local/`](../../app/src/main/java/local/oss/chronicle/data/local/):
+Located in [`data/local/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/):
 
 | Component | Purpose |
 |-----------|---------|
-| [`BookDatabase.kt`](../../app/src/main/java/local/oss/chronicle/data/local/BookDatabase.kt) | Room database for audiobook metadata |
-| [`BookRepository.kt`](../../app/src/main/java/local/oss/chronicle/data/local/BookRepository.kt) | Audiobook data access |
-| [`TrackDatabase.kt`](../../app/src/main/java/local/oss/chronicle/data/local/TrackDatabase.kt) | Room database for audio tracks |
-| [`TrackRepository.kt`](../../app/src/main/java/local/oss/chronicle/data/local/TrackRepository.kt) | Track data access |
-| [`ChapterDatabase.kt`](../../app/src/main/java/local/oss/chronicle/data/local/ChapterDatabase.kt) | Room database for chapters |
-| [`ChapterRepository.kt`](../../app/src/main/java/local/oss/chronicle/data/local/ChapterRepository.kt) | Chapter data access |
-| [`CollectionsDatabase.kt`](../../app/src/main/java/local/oss/chronicle/data/local/CollectionsDatabase.kt) | Room database for collections |
-| [`CollectionsRepository.kt`](../../app/src/main/java/local/oss/chronicle/data/local/CollectionsRepository.kt) | Collection data access |
-| [`SharedPreferencesPrefsRepo.kt`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt) | App preferences storage |
+| [`BookDatabase.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/BookDatabase.kt) | Room database for audiobook metadata |
+| [`BookRepository.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/BookRepository.kt) | Audiobook data access |
+| [`TrackDatabase.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/TrackDatabase.kt) | Room database for audio tracks |
+| [`TrackRepository.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/TrackRepository.kt) | Track data access |
+| [`ChapterDatabase.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterDatabase.kt) | Room database for chapters |
+| [`ChapterRepository.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterRepository.kt) | Chapter data access |
+| [`CollectionsDatabase.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/CollectionsDatabase.kt) | Room database for collections |
+| [`CollectionsRepository.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/CollectionsRepository.kt) | Collection data access |
+| [`SharedPreferencesPrefsRepo.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt) | App preferences storage |
 
 ### Remote Data Sources
 
-Located in [`data/sources/plex/`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/):
+Located in [`data/sources/plex/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/):
 
 | Component | Purpose |
 |-----------|---------|
-| [`PlexService.kt`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexService.kt) | Retrofit API interface |
-| [`PlexMediaRepository.kt`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexMediaRepository.kt) | Plex content access |
-| [`PlexLoginRepo.kt`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexLoginRepo.kt) | Authentication handling |
-| [`PlexConfig.kt`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexConfig.kt) | Server configuration |
-| [`PlexInterceptor.kt`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexInterceptor.kt) | HTTP header injection |
+| [`PlexService.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt) | Retrofit API interface |
+| [`PlexMediaRepository.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexMediaRepository.kt) | Plex content access |
+| [`PlexLoginRepo.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexLoginRepo.kt) | Authentication handling |
+| [`PlexConfig.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexConfig.kt) | Server configuration |
+| [`PlexInterceptor.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt) | HTTP header injection |
 
 ### File Cache
 
 | Component | Purpose |
 |-----------|---------|
-| [`CachedFileManager.kt`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/CachedFileManager.kt) | Manages cached/downloaded audio files |
+| [`CachedFileManager.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/CachedFileManager.kt) | Manages cached/downloaded audio files |
 
 ---
 

@@ -31,7 +31,7 @@ Google requires that **all voice commands via Android Auto MUST either:**
 
 ### Current Gaps in Chronicle
 
-The following silent failure points exist in [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt):
+The following silent failure points exist in [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt):
 
 | Callback | Lines | Issue | Impact |
 |----------|-------|-------|--------|
@@ -43,7 +43,7 @@ The following silent failure points exist in [`AudiobookMediaSessionCallback.kt`
 ### Root Causes
 
 1. **No Pre-Flight Authentication Checks**: Callbacks don't verify user is logged in before attempting operations
-2. **Incorrect Error Handling**: [`setSessionCustomErrorMessage()`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt:294-297) sets error message but **doesn't set `STATE_ERROR`**
+2. **Incorrect Error Handling**: [`setSessionCustomErrorMessage()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt:294-297) sets error message but **doesn't set `STATE_ERROR`**
 3. **No Timeout Mechanism**: `resumePlayFromEmpty()` can wait forever on connection observer
 4. **Silent Empty Results**: Search returning no results triggers only a log warning, no user feedback
 
@@ -118,7 +118,7 @@ Chronicle must use appropriate Android error codes for different failure scenari
 
 ### New Helper Method: `setPlaybackStateError()`
 
-Add to [`MediaPlayerService.kt`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt):
+Add to [`MediaPlayerService.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt):
 
 ```kotlin
 /**
@@ -873,7 +873,7 @@ No new dependencies needed. All functionality uses existing Android Media APIs:
 
 ### Unit Tests
 
-Create test file: `app/src/test/java/local/oss/chronicle/features/player/VoiceCommandErrorHandlingTest.kt`
+Create test file: `app/src/test/java/io/github/mjohnson7cd/chronicleauto/features/player/VoiceCommandErrorHandlingTest.kt`
 
 ```kotlin
 @RunWith(MockitoJUnitRunner::class)
@@ -1046,10 +1046,10 @@ Test these scenarios in **Android Auto simulator** or **real vehicle**:
 
 ### Phase 1: Core Error Handling (High Priority)
 
-- [ ] Add `setPlaybackStateError()` method to [`MediaPlayerService.kt`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt)
+- [ ] Add `setPlaybackStateError()` method to [`MediaPlayerService.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt)
 - [ ] Update `ServiceController` interface to expose `setPlaybackStateError()`
 - [ ] Modify `setSessionCustomErrorMessage()` to set `STATE_ERROR`
-- [ ] Add `handleAuthenticationError()` helper to [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt)
+- [ ] Add `handleAuthenticationError()` helper to [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)
 
 ### Phase 2: Callback Updates (High Priority)
 

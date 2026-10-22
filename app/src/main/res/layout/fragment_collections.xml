@@ -7,17 +7,17 @@
 
         <variable
             name="viewModel"
-            type="local.oss.chronicle.features.collections.CollectionsViewModel" />
+            type="io.github.mjohnson7cd.chronicleauto.features.collections.CollectionsViewModel" />
 
         <variable
             name="plexConfig"
-            type="local.oss.chronicle.data.sources.plex.PlexConfig" />
+            type="io.github.mjohnson7cd.chronicleauto.data.sources.plex.PlexConfig" />
 
         <import type="android.view.View" />
 
-        <import type="local.oss.chronicle.data.model.Collection" />
+        <import type="io.github.mjohnson7cd.chronicleauto.data.model.Collection" />
 
-        <import type="local.oss.chronicle.data.sources.plex.model.MediaTypes" />
+        <import type="io.github.mjohnson7cd.chronicleauto.data.sources.plex.model.MediaTypes" />
 
         <import type="androidx.recyclerview.widget.GridLayoutManager" />
 

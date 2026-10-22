@@ -44,7 +44,7 @@ Chronicle uses three separate Room databases for data persistence.
 
 Stores audiobook metadata.
 
-**Schema** ([`BookDatabase.kt`](../app/src/main/java/local/oss/chronicle/data/local/BookDatabase.kt)):
+**Schema** ([`BookDatabase.kt`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/BookDatabase.kt)):
 
 ```mermaid
 erDiagram
@@ -73,7 +73,7 @@ erDiagram
     }
 ```
 
-**Entity**: [`Audiobook`](../app/src/main/java/local/oss/chronicle/data/model/Audiobook.kt)
+**Entity**: [`Audiobook`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Audiobook.kt)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -133,7 +133,7 @@ fun search(query: String, offlineModeActive: Boolean): LiveData<List<Audiobook>>
 
 Stores individual audio track metadata.
 
-**Schema** ([`TrackDatabase.kt`](../app/src/main/java/local/oss/chronicle/data/local/TrackDatabase.kt)):
+**Schema** ([`TrackDatabase.kt`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/TrackDatabase.kt)):
 
 ```mermaid
 erDiagram
@@ -151,7 +151,7 @@ erDiagram
     }
 ```
 
-**Entity**: [`MediaItemTrack`](../app/src/main/java/local/oss/chronicle/data/model/MediaItemTrack.kt)
+**Entity**: [`MediaItemTrack`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/MediaItemTrack.kt)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -186,7 +186,7 @@ suspend fun getCachedTracks(): List<MediaItemTrack>
 
 Stores Plex collection metadata.
 
-**Schema** ([`CollectionsDatabase.kt`](../app/src/main/java/local/oss/chronicle/data/local/CollectionsDatabase.kt)):
+**Schema** ([`CollectionsDatabase.kt`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/CollectionsDatabase.kt)):
 
 ```mermaid
 erDiagram
@@ -198,7 +198,7 @@ erDiagram
     }
 ```
 
-**Entity**: [`Collection`](../app/src/main/java/local/oss/chronicle/data/model/Collection.kt)
+**Entity**: [`Collection`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Collection.kt)
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -230,7 +230,7 @@ Repositories provide a single source of truth combining local and remote data.
 
 ### IBookRepository
 
-**Interface** ([`BookRepository.kt`](../app/src/main/java/local/oss/chronicle/data/local/BookRepository.kt)):
+**Interface** ([`BookRepository.kt`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/BookRepository.kt)):
 
 ```kotlin
 interface IBookRepository {
@@ -309,7 +309,7 @@ class BookRepository @Inject constructor(
 
 ### ITrackRepository
 
-**Interface** ([`TrackRepository.kt`](../app/src/main/java/local/oss/chronicle/data/local/TrackRepository.kt)):
+**Interface** ([`TrackRepository.kt`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/TrackRepository.kt)):
 
 ```kotlin
 interface ITrackRepository {
@@ -372,7 +372,7 @@ class TrackRepository @Inject constructor(
 
 ### ChapterRepository
 
-**Library-aware chapter management** ([`ChapterRepository.kt`](../app/src/main/java/local/oss/chronicle/data/local/ChapterRepository.kt)):
+**Library-aware chapter management** ([`ChapterRepository.kt`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterRepository.kt)):
 
 ```kotlin
 class ChapterRepository @Inject constructor(
@@ -407,7 +407,7 @@ class ChapterRepository @Inject constructor(
 
 ### CollectionsRepository
 
-Handles Plex collection syncing ([`CollectionsRepository.kt`](../app/src/main/java/local/oss/chronicle/data/local/CollectionsRepository.kt)):
+Handles Plex collection syncing ([`CollectionsRepository.kt`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/CollectionsRepository.kt)):
 
 ```kotlin
 class CollectionsRepository @Inject constructor(
@@ -536,7 +536,7 @@ Two preference repositories manage settings:
 
 ### PrefsRepo
 
-App settings ([`SharedPreferencesPrefsRepo.kt`](../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt)):
+App settings ([`SharedPreferencesPrefsRepo.kt`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt)):
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -552,7 +552,7 @@ App settings ([`SharedPreferencesPrefsRepo.kt`](../app/src/main/java/local/oss/c
 
 ### PlexPrefsRepo
 
-Plex authentication state ([`SharedPreferencesPlexPrefsRepo.kt`](../app/src/main/java/local/oss/chronicle/data/sources/plex/SharedPreferencesPlexPrefsRepo.kt)):
+Plex authentication state ([`SharedPreferencesPlexPrefsRepo.kt`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/SharedPreferencesPlexPrefsRepo.kt)):
 
 | Key | Type | Description |
 |-----|------|-------------|
@@ -595,7 +595,7 @@ flowchart TD
 Downloaded tracks stored in app's external files directory:
 
 ```
-/storage/emulated/0/Android/data/local.oss.chronicle/files/
+/storage/emulated/0/Android/data/io.github.mjohnson7cd.chronicleauto/files/
 ├── track_120_a1b2c3d4.m4b
 ├── track_121_e5f6g7h8.m4b
 └── track_122_i9j0k1l2.mp3
@@ -603,7 +603,7 @@ Downloaded tracks stored in app's external files directory:
 
 **File naming**: `track_{trackId}_{partHash}.{extension}`
 
-**Management**: [`CachedFileManager`](../app/src/main/java/local/oss/chronicle/data/sources/plex/CachedFileManager.kt)
+**Management**: [`CachedFileManager`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/CachedFileManager.kt)
 
 ## Sync Mechanisms
 
@@ -642,13 +642,13 @@ sequenceDiagram
     LibrarySyncRepo->>CollRepo: refreshCollectionsPaginated()
 ```
 
-**Implementation**: [`LibrarySyncRepository`](../app/src/main/java/local/oss/chronicle/data/local/LibrarySyncRepository.kt)
+**Implementation**: [`LibrarySyncRepository`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/LibrarySyncRepository.kt)
 
 ### Progress Sync
 
 Progress syncs bidirectionally:
 
-**Local → Remote**: [`ProgressUpdater`](../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) sends timeline updates
+**Local → Remote**: [`ProgressUpdater`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) sends timeline updates
 
 **Remote → Local**: During library sync, `lastViewedAt` and `viewOffset` are merged
 
@@ -669,7 +669,7 @@ flowchart TD
     H -->|No| E
 ```
 
-**Refresh on App Start**: [`CachedFileManager.refreshTrackDownloadedStatus()`](../app/src/main/java/local/oss/chronicle/data/sources/plex/CachedFileManager.kt) reconciles DB with file system
+**Refresh on App Start**: [`CachedFileManager.refreshTrackDownloadedStatus()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/CachedFileManager.kt) reconciles DB with file system
 
 ## Offline Mode
 

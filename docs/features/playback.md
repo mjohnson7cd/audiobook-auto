@@ -54,16 +54,16 @@ graph TB
 
 | Component | Purpose |
 |-----------|---------|
-| [`MediaPlayerService`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) | Background service, MediaBrowserService |
-| [`AudiobookMediaSessionCallback`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) | Handles play/pause/seek commands |
-| [`PlaybackStateController`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackStateController.kt) | **Single source of truth** for playback state |
-| [`PlaybackState`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackState.kt) | Immutable playback state data class |
-| [`TrackListStateManager`](../../app/src/main/java/local/oss/chronicle/features/player/TrackListStateManager.kt) | Manages playlist state with Mutex protection |
-| [`SeekHandler`](../../app/src/main/java/local/oss/chronicle/features/player/SeekHandler.kt) | Atomic seek operations with timeout |
-| [`ChapterValidator`](../../app/src/main/java/local/oss/chronicle/features/player/ChapterValidator.kt) | Validates positions against chapter bounds |
-| [`PlaybackUrlResolver`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlaybackUrlResolver.kt) | Resolves streaming URLs with retry logic |
-| [`ProgressUpdater`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) | Syncs progress to Plex server |
-| [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) | Bridges StateFlow to LiveData for UI observation |
+| [`MediaPlayerService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) | Background service, MediaBrowserService |
+| [`AudiobookMediaSessionCallback`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) | Handles play/pause/seek commands |
+| [`PlaybackStateController`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackStateController.kt) | **Single source of truth** for playback state |
+| [`PlaybackState`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackState.kt) | Immutable playback state data class |
+| [`TrackListStateManager`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/TrackListStateManager.kt) | Manages playlist state with Mutex protection |
+| [`SeekHandler`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/SeekHandler.kt) | Atomic seek operations with timeout |
+| [`ChapterValidator`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ChapterValidator.kt) | Validates positions against chapter bounds |
+| [`PlaybackUrlResolver`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlaybackUrlResolver.kt) | Resolves streaming URLs with retry logic |
+| [`ProgressUpdater`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) | Syncs progress to Plex server |
+| [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) | Bridges StateFlow to LiveData for UI observation |
 
 ---
 
@@ -78,7 +78,7 @@ ExoPlayer Listeners → PlaybackStateController (StateFlow)
     → CurrentlyPlayingSingleton (LiveData Bridge) → UI Components
 ```
 
-**Critical Design Principle**: State updates should **only** originate from ExoPlayer listeners. Manual state updates in callbacks (like [`AudiobookMediaSessionCallback`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt)) can cause desynchronization between Android Auto and the app's UI.
+**Critical Design Principle**: State updates should **only** originate from ExoPlayer listeners. Manual state updates in callbacks (like [`AudiobookMediaSessionCallback`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)) can cause desynchronization between Android Auto and the app's UI.
 
 #### State Propagation Flow
 
@@ -102,7 +102,7 @@ sequenceDiagram
 
 #### LiveData Bridge Fields
 
-[`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) provides these LiveData fields for UI observation:
+[`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) provides these LiveData fields for UI observation:
 
 | LiveData Field | Source | Purpose |
 |----------------|--------|---------|
@@ -117,7 +117,7 @@ sequenceDiagram
 
 ### PlaybackStateController
 
-The [`PlaybackStateController`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackStateController.kt) is the **single source of truth** for all playback state.
+The [`PlaybackStateController`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackStateController.kt) is the **single source of truth** for all playback state.
 
 ```mermaid
 graph LR
@@ -228,7 +228,7 @@ suspend fun updatePosition(trackIndex: Int, positionMs: Long) = mutex.withLock {
 
 ### SeekHandler
 
-The [`SeekHandler`](../../app/src/main/java/local/oss/chronicle/features/player/SeekHandler.kt) ensures atomic seek operations:
+The [`SeekHandler`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/SeekHandler.kt) ensures atomic seek operations:
 
 - Prevents concurrent seek requests
 - Implements timeout to avoid hanging
@@ -236,7 +236,7 @@ The [`SeekHandler`](../../app/src/main/java/local/oss/chronicle/features/player/
 
 ### TrackListStateManager Thread Safety
 
-The [`TrackListStateManager`](../../app/src/main/java/local/oss/chronicle/features/player/TrackListStateManager.kt) uses Mutex for:
+The [`TrackListStateManager`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/TrackListStateManager.kt) uses Mutex for:
 
 - Track list updates
 - Chapter detection
@@ -248,7 +248,7 @@ The [`TrackListStateManager`](../../app/src/main/java/local/oss/chronicle/featur
 
 ### Network Resilience
 
-[`PlaybackUrlResolver`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlaybackUrlResolver.kt) uses retry with exponential backoff:
+[`PlaybackUrlResolver`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlaybackUrlResolver.kt) uses retry with exponential backoff:
 
 ```kotlin
 withRetry(
@@ -268,7 +268,7 @@ Resolved URLs are cached to avoid repeated network calls:
 
 ### ChapterValidator
 
-The [`ChapterValidator`](../../app/src/main/java/local/oss/chronicle/features/player/ChapterValidator.kt) prevents invalid playback states:
+The [`ChapterValidator`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ChapterValidator.kt) prevents invalid playback states:
 
 - Validates seek positions against chapter boundaries
 - Prevents seeking beyond track/chapter limits
@@ -296,7 +296,7 @@ stateDiagram-v2
 - Shake-to-snooze (extends timer by 5 minutes)
 - Only counts down during active playback
 
-**Implementation**: [`SleepTimer`](../../app/src/main/java/local/oss/chronicle/features/player/SleepTimer.kt)
+**Implementation**: [`SleepTimer`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/SleepTimer.kt)
 
 ---
 
@@ -318,8 +318,8 @@ Supports playback speed adjustment from 0.5x to 3.0x:
 **Additional option**: Skip silence - Automatically skips silent parts of audio
 
 **Implementation**: 
-- [`ModalBottomSheetSpeedChooser`](../../app/src/main/java/local/oss/chronicle/views/ModalBottomSheetSpeedChooser.kt)
-- [`PrefsRepo.playbackSpeed`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt)
+- [`ModalBottomSheetSpeedChooser`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/views/ModalBottomSheetSpeedChooser.kt)
+- [`PrefsRepo.playbackSpeed`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt)
 
 ---
 
@@ -361,7 +361,7 @@ sequenceDiagram
 
 ### Key Features
 
-- **Library-Aware**: Uses [`PlexProgressReporter`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexProgressReporter.kt) to route requests to the correct Plex server per library
+- **Library-Aware**: Uses [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) to route requests to the correct Plex server per library
 - **Thread-Safe**: Request-scoped Retrofit instances prevent global state mutation
 - **Immediate Pause State**: Pause events reported within 500ms (debounced)
 - **Accurate Durations**: Reports true track duration (no more `duration × 2` hack)
@@ -376,9 +376,9 @@ Progress reporting uses **`GET /:/timeline`** (not POST). Parameters are sent as
 
 ### Implementation
 
-- [`ProgressUpdater`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) - Schedules WorkManager tasks
-- [`PlexSyncScrobbleWorker`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexSyncScrobbleWorker.kt) - `CoroutineWorker` that handles async progress sync
-- [`PlexProgressReporter`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexProgressReporter.kt) - Library-aware, thread-safe API calls with request-scoped Retrofit instances
+- [`ProgressUpdater`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) - Schedules WorkManager tasks
+- [`PlexSyncScrobbleWorker`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexSyncScrobbleWorker.kt) - `CoroutineWorker` that handles async progress sync
+- [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) - Library-aware, thread-safe API calls with request-scoped Retrofit instances
 
 ---
 
@@ -391,7 +391,7 @@ Media notification with:
 - Album art
 - Title and author
 
-**Implementation**: [`NotificationBuilder`](../../app/src/main/java/local/oss/chronicle/features/player/NotificationBuilder.kt)
+**Implementation**: [`NotificationBuilder`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/NotificationBuilder.kt)
 
 ---
 

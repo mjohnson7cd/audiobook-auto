@@ -38,8 +38,8 @@ sequenceDiagram
 
 | File | Purpose |
 |------|---------|
-| [`CachedFileManager`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/CachedFileManager.kt) | Download orchestration |
-| [`DownloadNotificationWorker`](../../app/src/main/java/local/oss/chronicle/features/download/DownloadNotificationWorker.kt) | Progress notifications |
+| [`CachedFileManager`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/CachedFileManager.kt) | Download orchestration |
+| [`DownloadNotificationWorker`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/download/DownloadNotificationWorker.kt) | Progress notifications |
 
 ---
 

@@ -78,7 +78,7 @@ sequenceDiagram
 
 ### Critical Latency Source: URL Pre-Resolution
 
-The [`PlaybackUrlResolver.preResolveUrls()`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlaybackUrlResolver.kt) method makes a network call to Plex's decision endpoint for **each track** in the audiobook:
+The [`PlaybackUrlResolver.preResolveUrls()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlaybackUrlResolver.kt) method makes a network call to Plex's decision endpoint for **each track** in the audiobook:
 
 ```kotlin
 // AudiobookMediaSessionCallback.kt:511-519
@@ -265,7 +265,7 @@ class BridgeAudioPlayer(context: Context) {
 
 ### Phase 1: Core Bridge Audio Component
 
-**File**: `app/src/main/java/local/oss/chronicle/features/player/BridgeAudioPlayer.kt`
+**File**: `app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/BridgeAudioPlayer.kt`
 
 **Responsibilities:**
 - Play bridge audio from `res/raw/`
@@ -280,7 +280,7 @@ class BridgeAudioPlayer(context: Context) {
 
 ### Phase 2: Integration with Voice Command Flow
 
-**File**: [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt)
+**File**: [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)
 
 **Changes in `onPlayFromSearch()`:**
 
@@ -358,7 +358,7 @@ override fun onPlayFromSearch(query: String?, extras: Bundle?) {
 
 ### Phase 4: Settings Integration
 
-**File**: [`SharedPreferencesPrefsRepo.kt`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt)
+**File**: [`SharedPreferencesPrefsRepo.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt)
 
 **New Preference:**
 ```kotlin
@@ -380,7 +380,7 @@ val bridgeAudioEnabled: Boolean
 
 ### Phase 5: Dependency Injection
 
-**File**: [`ServiceModule.kt`](../../app/src/main/java/local/oss/chronicle/injection/modules/ServiceModule.kt)
+**File**: [`ServiceModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/ServiceModule.kt)
 
 **Provide BridgeAudioPlayer:**
 ```kotlin
@@ -555,14 +555,14 @@ After design review, we implemented a **Text-to-Speech (TTS) based solution** in
 
 **Implementation Details:**
 
-1. **[`VoiceCommandBridgeAudio.kt`](../../app/src/main/java/local/oss/chronicle/features/player/VoiceCommandBridgeAudio.kt)**
+1. **[`VoiceCommandBridgeAudio.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/VoiceCommandBridgeAudio.kt)**
    - Wraps Android's `TextToSpeech` API
    - Speaks message: "Getting ready to play your audiobook"
    - Lifecycle managed by `MediaPlayerService`
    - `@ServiceScope` scoped component
 
 2. **Voice Command Detection**
-   - Uses `voiceCommandStartTime` in [`AudiobookMediaSessionCallback`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt)
+   - Uses `voiceCommandStartTime` in [`AudiobookMediaSessionCallback`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)
    - Only set in `onPlayFromSearch()` (voice-specific callback)
    - Prevents false triggers from UI taps or other playback sources
 
@@ -572,12 +572,12 @@ After design review, we implemented a **Text-to-Speech (TTS) based solution** in
    - `MediaPlayerService.onIsPlayingChanged()`: Stops TTS when audiobook actually starts
 
 4. **User Preference**
-   - Added `bridgeAudioEnabled` to [`SharedPreferencesPrefsRepo`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt)
+   - Added `bridgeAudioEnabled` to [`SharedPreferencesPrefsRepo`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt)
    - Default: enabled (true)
    - String resources in [`strings.xml`](../../app/src/main/res/values/strings.xml)
 
 5. **Dependency Injection**
-   - Provider in [`ServiceModule.kt`](../../app/src/main/java/local/oss/chronicle/injection/modules/ServiceModule.kt)
+   - Provider in [`ServiceModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/ServiceModule.kt)
    - Injected into `AudiobookMediaSessionCallback` constructor
 
 **Key Differences from Original Design:**
@@ -587,11 +587,11 @@ After design review, we implemented a **Text-to-Speech (TTS) based solution** in
 - ⚠️ Slight TTS initialization delay (mitigated by early initialization in `onCreate()`)
 
 **Files Modified:**
-- **Created**: [`VoiceCommandBridgeAudio.kt`](../../app/src/main/java/local/oss/chronicle/features/player/VoiceCommandBridgeAudio.kt)
-- **Modified**: [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt)
-- **Modified**: [`MediaPlayerService.kt`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt)
-- **Modified**: [`SharedPreferencesPrefsRepo.kt`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt)
-- **Modified**: [`ServiceModule.kt`](../../app/src/main/java/local/oss/chronicle/injection/modules/ServiceModule.kt)
+- **Created**: [`VoiceCommandBridgeAudio.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/VoiceCommandBridgeAudio.kt)
+- **Modified**: [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)
+- **Modified**: [`MediaPlayerService.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt)
+- **Modified**: [`SharedPreferencesPrefsRepo.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt)
+- **Modified**: [`ServiceModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/ServiceModule.kt)
 - **Modified**: [`strings.xml`](../../app/src/main/res/values/strings.xml)
 
 **Testing:**

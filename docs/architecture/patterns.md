@@ -42,17 +42,17 @@ class BookRepository(
 
 | Repository | Purpose |
 |------------|---------|
-| [`BookRepository`](../../app/src/main/java/local/oss/chronicle/data/local/BookRepository.kt) | Audiobook metadata access |
-| [`TrackRepository`](../../app/src/main/java/local/oss/chronicle/data/local/TrackRepository.kt) | Audio track management |
-| [`ChapterRepository`](../../app/src/main/java/local/oss/chronicle/data/local/ChapterRepository.kt) | Chapter marker access |
-| [`CollectionsRepository`](../../app/src/main/java/local/oss/chronicle/data/local/CollectionsRepository.kt) | Plex collections access |
-| [`PlexMediaRepository`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexMediaRepository.kt) | Remote Plex content access |
+| [`BookRepository`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/BookRepository.kt) | Audiobook metadata access |
+| [`TrackRepository`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/TrackRepository.kt) | Audio track management |
+| [`ChapterRepository`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterRepository.kt) | Chapter marker access |
+| [`CollectionsRepository`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/CollectionsRepository.kt) | Plex collections access |
+| [`PlexMediaRepository`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexMediaRepository.kt) | Remote Plex content access |
 
 ---
 
 ## MediaBrowserService Architecture
 
-[`MediaPlayerService`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) extends `MediaBrowserServiceCompat` to provide:
+[`MediaPlayerService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) extends `MediaBrowserServiceCompat` to provide:
 
 - **Background audio playback** - Continues playing when app is backgrounded
 - **Android Auto/Automotive support** - Browse and play from car displays
@@ -93,14 +93,14 @@ graph TB
 
 | Component | Purpose |
 |-----------|---------|
-| [`MediaPlayerService`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) | Main service managing playback lifecycle |
-| [`AudiobookMediaSessionCallback`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) | Handles play/pause/seek commands |
-| [`TrackListStateManager`](../../app/src/main/java/local/oss/chronicle/features/player/TrackListStateManager.kt) | Manages playlist state and chapter detection |
-| [`PlaybackStateController`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackStateController.kt) | Single source of truth for playback state |
-| [`PlaybackUrlResolver`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlaybackUrlResolver.kt) | Resolves streaming URLs with authentication |
-| [`SeekHandler`](../../app/src/main/java/local/oss/chronicle/features/player/SeekHandler.kt) | Atomic seek operations with timeout |
-| [`ChapterValidator`](../../app/src/main/java/local/oss/chronicle/features/player/ChapterValidator.kt) | Validates positions against chapter bounds |
-| [`NotificationBuilder`](../../app/src/main/java/local/oss/chronicle/features/player/NotificationBuilder.kt) | Creates playback notifications |
+| [`MediaPlayerService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) | Main service managing playback lifecycle |
+| [`AudiobookMediaSessionCallback`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) | Handles play/pause/seek commands |
+| [`TrackListStateManager`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/TrackListStateManager.kt) | Manages playlist state and chapter detection |
+| [`PlaybackStateController`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackStateController.kt) | Single source of truth for playback state |
+| [`PlaybackUrlResolver`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlaybackUrlResolver.kt) | Resolves streaming URLs with authentication |
+| [`SeekHandler`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/SeekHandler.kt) | Atomic seek operations with timeout |
+| [`ChapterValidator`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ChapterValidator.kt) | Validates positions against chapter bounds |
+| [`NotificationBuilder`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/NotificationBuilder.kt) | Creates playback notifications |
 
 ---
 
@@ -123,7 +123,7 @@ Chronicle uses two separate HTTP client configurations for different purposes:
 
 Both clients must include the `X-Plex-Client-Profile-Extra` header. This header tells Plex which audio formats the app supports and is critical for proper playback.
 
-See [`PlexInterceptor`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexInterceptor.kt) for header implementation.
+See [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt) for header implementation.
 
 ---
 
@@ -151,7 +151,7 @@ stateDiagram-v2
 - `CONNECTED` - Successfully connected to a Plex server
 - `CONNECTION_FAILED` - All connection attempts failed
 
-**Implementation:** [`PlexConfig`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexConfig.kt)
+**Implementation:** [`PlexConfig`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexConfig.kt)
 
 ### Login State Machine
 
@@ -178,7 +178,7 @@ stateDiagram-v2
 - `LOGGED_IN_NO_LIBRARY_CHOSEN` - Server connected but no library selected
 - `LOGGED_IN_FULLY` - Fully authenticated and configured
 
-**Implementation:** [`PlexLoginRepo`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexLoginRepo.kt)
+**Implementation:** [`PlexLoginRepo`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexLoginRepo.kt)
 
 ---
 
@@ -284,7 +284,7 @@ val audiobooks = bookRepository.observeAudiobooks()
 
 ## PlaybackStateController Pattern
 
-The [`PlaybackStateController`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackStateController.kt) is the single source of truth for all playback state, providing thread-safe, reactive state management.
+The [`PlaybackStateController`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackStateController.kt) is the single source of truth for all playback state, providing thread-safe, reactive state management.
 
 ### Architecture
 
@@ -322,7 +322,7 @@ graph TB
 
 ### Key Design Principles
 
-1. **Immutable State**: [`PlaybackState`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackState.kt) is immutable; updates create new instances via `copy()`
+1. **Immutable State**: [`PlaybackState`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackState.kt) is immutable; updates create new instances via `copy()`
 2. **Thread Safety**: All updates go through a `Mutex` to prevent race conditions
 3. **StateFlow Observation**: State changes propagate reactively via `StateFlow`
 4. **Debounced Persistence**: Database writes are debounced to reduce I/O overhead
@@ -348,11 +348,11 @@ class PlaybackStateController @Inject constructor(
 
 ### StateFlow → LiveData Bridge
 
-The [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) bridges StateFlow to LiveData for UI consumption, providing reliable state synchronization for UI components.
+The [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) bridges StateFlow to LiveData for UI consumption, providing reliable state synchronization for UI components.
 
 #### Why This Pattern Exists
 
-[`PlaybackStateController`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackStateController.kt) uses `StateFlow` as the single source of truth for playback state. However, Android UI components (Fragments, Activities) traditionally observe `LiveData` which is lifecycle-aware and automatically stops updates when the UI is not visible.
+[`PlaybackStateController`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackStateController.kt) uses `StateFlow` as the single source of truth for playback state. However, Android UI components (Fragments, Activities) traditionally observe `LiveData` which is lifecycle-aware and automatically stops updates when the UI is not visible.
 
 The bridge pattern solves state synchronization issues by:
 - Ensuring all UI components observe the same source of truth
@@ -362,7 +362,7 @@ The bridge pattern solves state synchronization issues by:
 
 #### LiveData Bridge Fields
 
-[`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) provides the following LiveData fields:
+[`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) provides the following LiveData fields:
 
 ```kotlin
 // Current playback state
@@ -445,13 +445,13 @@ graph TB
     CPS --> VM
 ```
 
-**Critical Note**: The fix for Android Auto/mini player desynchronization involved removing manual state updates from [`AudiobookMediaSessionCallback`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) and ensuring all state changes flow through ExoPlayer listeners → PlaybackStateController → LiveData bridge → UI.
+**Critical Note**: The fix for Android Auto/mini player desynchronization involved removing manual state updates from [`AudiobookMediaSessionCallback`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) and ensuring all state changes flow through ExoPlayer listeners → PlaybackStateController → LiveData bridge → UI.
 
 ---
 
 ## Retry with Exponential Backoff Pattern
 
-For resilient network operations, Chronicle uses [`withRetry()`](../../app/src/main/java/local/oss/chronicle/util/RetryHandler.kt) with configurable exponential backoff.
+For resilient network operations, Chronicle uses [`withRetry()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/util/RetryHandler.kt) with configurable exponential backoff.
 
 ### Configuration
 
@@ -496,7 +496,7 @@ Attempt 4: 4000ms delay (capped at maxDelayMs)
 
 ## Structured Error Handling Pattern
 
-Chronicle uses a [`ChronicleError`](../../app/src/main/java/local/oss/chronicle/util/ErrorHandling.kt) sealed class for type-safe error handling.
+Chronicle uses a [`ChronicleError`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/util/ErrorHandling.kt) sealed class for type-safe error handling.
 
 ### Error Categories
 
@@ -532,7 +532,7 @@ when (error) {
 
 ## Thread Safety with Mutex Pattern
 
-[`TrackListStateManager`](../../app/src/main/java/local/oss/chronicle/features/player/TrackListStateManager.kt) uses Kotlin's `Mutex` for thread-safe state updates.
+[`TrackListStateManager`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/TrackListStateManager.kt) uses Kotlin's `Mutex` for thread-safe state updates.
 
 ### Implementation
 

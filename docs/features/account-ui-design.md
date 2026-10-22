@@ -89,7 +89,7 @@ sequenceDiagram
 
 **LiveData vs StateFlow Exposure:**
 
-- **Business Logic Layer** ([`AccountManager`](../../app/src/main/java/local/oss/chronicle/features/account/AccountManager.kt), [`ActiveLibraryProvider`](../../app/src/main/java/local/oss/chronicle/features/account/ActiveLibraryProvider.kt)): Uses `StateFlow` for reactive state
+- **Business Logic Layer** ([`AccountManager`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/account/AccountManager.kt), [`ActiveLibraryProvider`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/account/ActiveLibraryProvider.kt)): Uses `StateFlow` for reactive state
 - **ViewModel Layer**: Exposes `LiveData` to UI (Android best practice for lifecycle awareness)
 - **Conversion**: ViewModels convert `StateFlow` → `LiveData` via `.asLiveData()`
 
@@ -753,7 +753,7 @@ LibrarySelectorBottomSheet.newInstance()
 
 ### 5.1 ActivityComponent Changes
 
-**File**: [`ActivityComponent.kt`](../../app/src/main/java/local/oss/chronicle/injection/components/ActivityComponent.kt)
+**File**: [`ActivityComponent.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/components/ActivityComponent.kt)
 
 Add injection methods:
 
@@ -796,7 +796,7 @@ class ActivityModule(private val activity: AppCompatActivity) {
 
 ### 5.3 AppComponent (No Changes Needed)
 
-[`AccountManager`](../../app/src/main/java/local/oss/chronicle/features/account/AccountManager.kt) and [`ActiveLibraryProvider`](../../app/src/main/java/local/oss/chronicle/features/account/ActiveLibraryProvider.kt) are already provided at `@Singleton` scope via existing modules.
+[`AccountManager`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/account/AccountManager.kt) and [`ActiveLibraryProvider`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/account/ActiveLibraryProvider.kt) are already provided at `@Singleton` scope via existing modules.
 
 ---
 
@@ -804,7 +804,7 @@ class ActivityModule(private val activity: AppCompatActivity) {
 
 ### 6.1 Navigator Changes
 
-**File**: [`Navigator.kt`](../../app/src/main/java/local/oss/chronicle/navigation/Navigator.kt)
+**File**: [`Navigator.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/navigation/Navigator.kt)
 
 Add new navigation methods:
 
@@ -859,7 +859,7 @@ val onManageAccountsClick = {
 Add preference item (or update `SettingsList` custom view):
 
 ```xml
-<local.oss.chronicle.views.PreferenceItemClickable
+<io.github.mjohnson7cd.chronicleauto.views.PreferenceItemClickable
     android:id="@+id/manage_accounts"
     title="@string/manage_accounts"
     summary="@string/manage_accounts_summary"
@@ -1057,7 +1057,7 @@ class AccountListViewModelTest {
 **Decision**: Use modal bottom sheet instead of navigation drawer or dialog.
 
 **Rationale**:
-- Consistent with existing bottom sheet pattern ([`ModalBottomSheetSpeedChooser`](../../app/src/main/java/local/oss/chronicle/views/ModalBottomSheetSpeedChooser.kt))
+- Consistent with existing bottom sheet pattern ([`ModalBottomSheetSpeedChooser`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/views/ModalBottomSheetSpeedChooser.kt))
 - Accessible from anywhere without disrupting navigation flow
 - Material Design best practice for contextual actions
 
@@ -1073,7 +1073,7 @@ class AccountListViewModelTest {
 
 ### 11.4 Why No Jetpack Navigation?
 
-**Decision**: Stick with existing [`Navigator`](../../app/src/main/java/local/oss/chronicle/navigation/Navigator.kt) pattern.
+**Decision**: Stick with existing [`Navigator`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/navigation/Navigator.kt) pattern.
 
 **Rationale**:
 - Consistent with existing codebase architecture

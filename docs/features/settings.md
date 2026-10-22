@@ -32,9 +32,9 @@ Chronicle provides various settings to customize the listening experience.
 
 | File | Purpose |
 |------|---------|
-| [`SettingsFragment`](../../app/src/main/java/local/oss/chronicle/features/settings/SettingsFragment.kt) | Settings UI |
-| [`SettingsViewModel`](../../app/src/main/java/local/oss/chronicle/features/settings/SettingsViewModel.kt) | Settings state management |
-| [`PrefsRepo`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt) | Preferences persistence |
+| [`SettingsFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/SettingsFragment.kt) | Settings UI |
+| [`SettingsViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/SettingsViewModel.kt) | Settings state management |
+| [`PrefsRepo`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt) | Preferences persistence |
 
 ### Preference Storage
 
@@ -98,8 +98,8 @@ When **disabled**, voice searches that return no results will always show an err
 | Empty library | ✗ Shows error | ✗ Shows error |
 
 **Implementation:**
-- Storage: [`SharedPreferencesPrefsRepo.voiceSearchFallbackEnabled`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt)
-- Usage: [`AudiobookMediaSessionCallback.handleSearchSuspend()`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt)
+- Storage: [`SharedPreferencesPrefsRepo.voiceSearchFallbackEnabled`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt)
+- Usage: [`AudiobookMediaSessionCallback.handleSearchSuspend()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)
 
 **Strict Auto Client Validation Details:**
 
@@ -124,9 +124,9 @@ When **enabled**, only whitelisted clients (Android Auto, Google Assistant, Wear
 **Important:** This setting should remain **OFF** for production builds to ensure Google Play Store compatibility. The default (off) still provides content gating through the `allowAndroidAuto` setting in the Android Auto Settings section.
 
 **Implementation:**
-- Storage: [`SharedPreferencesPrefsRepo.strictAutoValidation`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt)
-- Usage: [`MediaPlayerService.onGetRoot()`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt)
-- Validation: [`PackageValidator`](../../app/src/main/java/local/oss/chronicle/util/PackageValidator.kt)
+- Storage: [`SharedPreferencesPrefsRepo.strictAutoValidation`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt)
+- Usage: [`MediaPlayerService.onGetRoot()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt)
+- Validation: [`PackageValidator`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/util/PackageValidator.kt)
 
 ### Other Platform Settings
 

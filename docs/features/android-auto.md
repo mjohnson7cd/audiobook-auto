@@ -28,8 +28,8 @@ To provide a cleaner user interface, Chronicle conditionally shows browse tree t
 
 | Tab | Visibility Condition | Repository Method |
 |-----|---------------------|-------------------|
-| **Recently Listened** | Only shown if user has playback history | [`bookRepository.getRecentlyListenedAsync()`](../../app/src/main/java/local/oss/chronicle/data/local/BookRepository.kt) returns non-empty results |
-| **Offline** | Only shown if user has downloaded audiobooks | [`bookRepository.getCachedAudiobooksAsync()`](../../app/src/main/java/local/oss/chronicle/data/local/BookRepository.kt) returns non-empty results |
+| **Recently Listened** | Only shown if user has playback history | [`bookRepository.getRecentlyListenedAsync()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/BookRepository.kt) returns non-empty results |
+| **Offline** | Only shown if user has downloaded audiobooks | [`bookRepository.getCachedAudiobooksAsync()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/BookRepository.kt) returns non-empty results |
 | **Recently Added** | Always visible | N/A |
 | **Library** | Always visible | N/A |
 
@@ -39,7 +39,7 @@ To provide a cleaner user interface, Chronicle conditionally shows browse tree t
 - Reduces visual clutter and improves first-time user experience
 - Android Auto UI remains focused on relevant actions
 
-**Implementation**: [`MediaPlayerService.kt:810-856`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt:810-856)
+**Implementation**: [`MediaPlayerService.kt:810-856`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt:810-856)
 
 ---
 
@@ -60,16 +60,16 @@ To provide a cleaner user interface, Chronicle conditionally shows browse tree t
 
 | Method | Purpose |
 |--------|---------|
-| [`MediaPlayerService.onGetRoot()`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) | Returns root of browsable content |
-| [`MediaPlayerService.onLoadChildren()`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) | Loads content for a browsable node |
-| [`MediaPlayerService.onSearch()`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) | Handles voice search queries |
-| [`AudiobookMediaSessionCallback`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) | Handles playback commands with error handling |
+| [`MediaPlayerService.onGetRoot()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) | Returns root of browsable content |
+| [`MediaPlayerService.onLoadChildren()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) | Loads content for a browsable node |
+| [`MediaPlayerService.onSearch()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) | Handles voice search queries |
+| [`AudiobookMediaSessionCallback`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) | Handles playback commands with error handling |
 
 ### Client Validation
 
 Chronicle can optionally validate that the connecting client is an authorized Android Auto client:
 
-- [`PackageValidator`](../../app/src/main/java/local/oss/chronicle/util/PackageValidator.kt) - Validates Auto client signatures
+- [`PackageValidator`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/util/PackageValidator.kt) - Validates Auto client signatures
 
 **Strict Auto Client Validation Toggle:**
 
@@ -77,7 +77,7 @@ Chronicle includes a "Strict Auto client validation" setting (Settings → ETC) 
 
 **Background:**
 
-Google Play Store uses internal testing tools to verify that apps properly implement MediaBrowser APIs. These testing tools have different package signatures than production Android Auto, Google Assistant, or WearOS clients. If an app uses strict client signature validation (via [`PackageValidator`](../../app/src/main/java/local/oss/chronicle/util/PackageValidator.kt)), Google's review tools will be blocked from connecting, causing the app to be **rejected during review**.
+Google Play Store uses internal testing tools to verify that apps properly implement MediaBrowser APIs. These testing tools have different package signatures than production Android Auto, Google Assistant, or WearOS clients. If an app uses strict client signature validation (via [`PackageValidator`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/util/PackageValidator.kt)), Google's review tools will be blocked from connecting, causing the app to be **rejected during review**.
 
 **Solution:**
 
@@ -124,10 +124,10 @@ override fun onGetRoot(
 ```
 
 **References:**
-- Implementation: [`MediaPlayerService.onGetRoot()`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt)
-- Setting storage: [`SharedPreferencesPrefsRepo.strictAutoValidation`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt)
-- Validation logic: [`PackageValidator`](../../app/src/main/java/local/oss/chronicle/util/PackageValidator.kt)
-- UI: [`SettingsFragment`](../../app/src/main/java/local/oss/chronicle/features/settings/SettingsFragment.kt) and [`SettingsViewModel`](../../app/src/main/java/local/oss/chronicle/features/settings/SettingsViewModel.kt)
+- Implementation: [`MediaPlayerService.onGetRoot()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt)
+- Setting storage: [`SharedPreferencesPrefsRepo.strictAutoValidation`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt)
+- Validation logic: [`PackageValidator`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/util/PackageValidator.kt)
+- UI: [`SettingsFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/SettingsFragment.kt) and [`SettingsViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/SettingsViewModel.kt)
 
 ---
 
@@ -217,7 +217,7 @@ Chronicle automatically clears Android Auto error messages when the user success
 When authentication errors occur in Android Auto (e.g., expired token, not logged in), error messages can persist even after the user successfully logs in on their phone, requiring manual intervention to clear the error state.
 
 **Solution:**
-The [`loginStateObserver`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt:445) in [`MediaPlayerService`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) detects when login completes successfully and automatically clears any existing error state by setting the MediaSession playback state to `STATE_STOPPED`.
+The [`loginStateObserver`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt:445) in [`MediaPlayerService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) detects when login completes successfully and automatically clears any existing error state by setting the MediaSession playback state to `STATE_STOPPED`.
 
 **Implementation:**
 ```kotlin
@@ -253,7 +253,7 @@ Message items use `FLAG_PLAYABLE` to ensure Android Auto displays them properly 
 
 **Preventing Infinite Spinner:**
 
-When users click on message items in the Android Auto UI, the system would normally attempt playback, causing an infinite spinner. Chronicle prevents this by detecting and ignoring clicks on message items in [`AudiobookMediaSessionCallback.onPlayFromMediaId()`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt:475):
+When users click on message items in the Android Auto UI, the system would normally attempt playback, causing an infinite spinner. Chronicle prevents this by detecting and ignoring clicks on message items in [`AudiobookMediaSessionCallback.onPlayFromMediaId()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt:475):
 
 ```kotlin
 // Ignore clicks on error/message items
@@ -328,10 +328,10 @@ graph TB
 ### How State Synchronization Works
 
 1. **Commands flow through MediaSession**: Whether from Android Auto or UI buttons, all playback commands go through the MediaSession/MediaSessionCallback
-2. **ExoPlayer executes commands**: [`AudiobookMediaSessionCallback`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) translates commands to ExoPlayer actions
-3. **ExoPlayer listeners update state**: ExoPlayer fires listener events (e.g., `onIsPlayingChanged()`) which update [`PlaybackStateController`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackStateController.kt)
-4. **StateFlow propagates to UI**: [`PlaybackStateController`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackStateController.kt) emits new state via StateFlow
-5. **LiveData bridge for UI**: [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) converts StateFlow to LiveData
+2. **ExoPlayer executes commands**: [`AudiobookMediaSessionCallback`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) translates commands to ExoPlayer actions
+3. **ExoPlayer listeners update state**: ExoPlayer fires listener events (e.g., `onIsPlayingChanged()`) which update [`PlaybackStateController`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackStateController.kt)
+4. **StateFlow propagates to UI**: [`PlaybackStateController`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackStateController.kt) emits new state via StateFlow
+5. **LiveData bridge for UI**: [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) converts StateFlow to LiveData
 6. **UI observes LiveData**: Mini player and other UI components observe LiveData fields like `isPlayingLiveData`
 
 ### State Sources
@@ -348,15 +348,15 @@ graph TB
 
 **All state updates originate from ExoPlayer listeners.** The fix for Android Auto/mini player desynchronization involved:
 
-1. **Removed**: Manual state updates in [`AudiobookMediaSessionCallback`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) (e.g., premature `isPlaying = true` before ExoPlayer confirmed)
-2. **Added**: LiveData bridge in [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) for `book`, `track`, `chapter`, and `isPlaying` state
-3. **Updated**: [`MainActivityViewModel`](../../app/src/main/java/local/oss/chronicle/application/MainActivityViewModel.kt) to observe LiveData bridge directly
+1. **Removed**: Manual state updates in [`AudiobookMediaSessionCallback`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) (e.g., premature `isPlaying = true` before ExoPlayer confirmed)
+2. **Added**: LiveData bridge in [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) for `book`, `track`, `chapter`, and `isPlaying` state
+3. **Updated**: [`MainActivityViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/application/MainActivityViewModel.kt) to observe LiveData bridge directly
 
 This ensures that Android Auto commands and mini player UI always reflect the **actual** ExoPlayer state, preventing race conditions where UI shows "playing" while ExoPlayer is still buffering.
 
 ### Mini Player State Observation
 
-The mini player observes state through [`MainActivityViewModel`](../../app/src/main/java/local/oss/chronicle/application/MainActivityViewModel.kt):
+The mini player observes state through [`MainActivityViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/application/MainActivityViewModel.kt):
 
 ```kotlin
 // ViewModel observes LiveData bridge
@@ -380,7 +380,7 @@ Chronicle automatically refreshes the Android Auto browse tree when the user's l
 
 ### Implementation
 
-[`MediaPlayerService`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) observes [`plexLoginRepo.loginEvent`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexLoginRepo.kt) through a `loginStateObserver`:
+[`MediaPlayerService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) observes [`plexLoginRepo.loginEvent`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexLoginRepo.kt) through a `loginStateObserver`:
 
 ```kotlin
 private val loginStateObserver = Observer<PlexLoginEvent> { event ->
@@ -409,8 +409,8 @@ private val loginStateObserver = Observer<PlexLoginEvent> { event ->
 
 **When the observer is triggered:**
 1. User completes login flow in the phone app
-2. [`PlexLoginRepo`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexLoginRepo.kt) emits a login event
-3. [`MediaPlayerService`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) receives the event
+2. [`PlexLoginRepo`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexLoginRepo.kt) emits a login event
+3. [`MediaPlayerService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) receives the event
 4. **If an error state exists**, the service sets the playback state to `STATE_STOPPED` to clear any displayed error messages
 5. Service calls `notifyChildrenChanged(CHRONICLE_MEDIA_ROOT_ID)`
 6. Android Auto invalidates its cache and fetches new browse tree content
@@ -449,7 +449,7 @@ sequenceDiagram
 
 ### Lifecycle Management
 
-The observer is registered when [`MediaPlayerService`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) is created and unregistered when destroyed to prevent memory leaks:
+The observer is registered when [`MediaPlayerService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) is created and unregistered when destroyed to prevent memory leaks:
 
 ```kotlin
 override fun onCreate() {
@@ -484,9 +484,9 @@ Chronicle handles the following MediaSession callbacks for voice commands:
 
 | Callback | Triggered By | Example |
 |----------|--------------|---------|
-| [`onPlay()`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) | Generic play command | "Hey Google, play on Chronicle" |
-| [`onPlayFromSearch()`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) | Search query | "Hey Google, play [book name] on Chronicle" |
-| [`onPlayFromMediaId()`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) | Direct media selection | User taps book in Android Auto UI |
+| [`onPlay()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) | Generic play command | "Hey Google, play on Chronicle" |
+| [`onPlayFromSearch()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) | Search query | "Hey Google, play [book name] on Chronicle" |
+| [`onPlayFromMediaId()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) | Direct media selection | User taps book in Android Auto UI |
 
 **Critical Requirement**: Every command **must** result in either:
 - ✅ Successful playback starts
@@ -498,7 +498,7 @@ Silent failures result in app rejection from Google Play.
 
 ### Error Response Strategy
 
-Chronicle uses the [`IPlaybackErrorReporter`](../../app/src/main/java/local/oss/chronicle/features/player/IPlaybackErrorReporter.kt) interface to communicate errors from the MediaSession callback to the service:
+Chronicle uses the [`IPlaybackErrorReporter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/IPlaybackErrorReporter.kt) interface to communicate errors from the MediaSession callback to the service:
 
 ```kotlin
 interface IPlaybackErrorReporter {
@@ -509,7 +509,7 @@ interface IPlaybackErrorReporter {
 
 #### Implementation
 
-[`MediaPlayerService`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt) implements this interface and sets `PlaybackStateCompat.STATE_ERROR`, which causes Android Auto to display the error message both visually on screen and via Google Assistant voice feedback.
+[`MediaPlayerService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt) implements this interface and sets `PlaybackStateCompat.STATE_ERROR`, which causes Android Auto to display the error message both visually on screen and via Google Assistant voice feedback.
 
 #### Error Scenarios and Messages
 
@@ -533,7 +533,7 @@ All error strings are defined in [`strings.xml`](../../app/src/main/res/values/s
 
 **All voice command callbacks check authentication state before proceeding.** This prevents silent failures when users aren't fully logged in.
 
-The [`checkAuthenticationOrError()`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) helper method validates:
+The [`checkAuthenticationOrError()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) helper method validates:
 
 1. User is logged in to Plex
 2. Server has been chosen
@@ -597,7 +597,7 @@ When the **setting is disabled**:
 
 **Rationale**: Some users prefer to have something play (their recent book) rather than get an error when voice search finds nothing. Others prefer to know when their specific request failed. The setting provides flexibility for both preferences.
 
-**See Also**: [`AudiobookMediaSessionCallback.handleSearchSuspend()`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt) for implementation details.
+**See Also**: [`AudiobookMediaSessionCallback.handleSearchSuspend()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) for implementation details.
 
 #### Direct Media ID
 
@@ -609,7 +609,7 @@ When browsing Android Auto UI and tapping a book, there is **no fallback** - onl
 
 To prevent infinite waiting when network/server isn't available, Chronicle implements a **10-second timeout** for connection establishment.
 
-**Constant**: `RESUME_TIMEOUT_MILLIS = 10_000L` in [`AudiobookMediaSessionCallback`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt)
+**Constant**: `RESUME_TIMEOUT_MILLIS = 10_000L` in [`AudiobookMediaSessionCallback`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)
 
 **When timeout occurs**:
 - User sees error: "Connection timeout - please check your network"
@@ -644,9 +644,9 @@ Chronicle implements **TTS bridge audio** to provide instant feedback when users
 
 **Implementation Details:**
 - Uses Android's TextToSpeech API (no audio files needed)
-- Lifecycle managed by [`MediaPlayerService`](../../app/src/main/java/local/oss/chronicle/features/player/MediaPlayerService.kt)
-- Triggered only in [`onPlayFromSearch()`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt)
-- Component: [`VoiceCommandBridgeAudio`](../../app/src/main/java/local/oss/chronicle/features/player/VoiceCommandBridgeAudio.kt)
+- Lifecycle managed by [`MediaPlayerService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt)
+- Triggered only in [`onPlayFromSearch()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)
+- Component: [`VoiceCommandBridgeAudio`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/VoiceCommandBridgeAudio.kt)
 
 **Technical Documentation**: [Voice Command Latency Analysis](../architecture/voice-command-latency-analysis.md)
 
@@ -706,9 +706,9 @@ flowchart TD
 | Uses specific book titles in voice commands | "I want to know if that specific book wasn't found" | Disabled ✗ |
 
 **Code Reference:**
-- Implementation: [`AudiobookMediaSessionCallback.handleSearchSuspend()`](../../app/src/main/java/local/oss/chronicle/features/player/AudiobookMediaSessionCallback.kt)
-- Setting storage: [`SharedPreferencesPrefsRepo.voiceSearchFallbackEnabled`](../../app/src/main/java/local/oss/chronicle/data/local/SharedPreferencesPrefsRepo.kt)
-- Tests: [`VoiceSearchFallbackTest.kt`](../../app/src/test/java/local/oss/chronicle/features/player/VoiceSearchFallbackTest.kt)
+- Implementation: [`AudiobookMediaSessionCallback.handleSearchSuspend()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)
+- Setting storage: [`SharedPreferencesPrefsRepo.voiceSearchFallbackEnabled`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/SharedPreferencesPrefsRepo.kt)
+- Tests: [`VoiceSearchFallbackTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/chronicleauto/features/player/VoiceSearchFallbackTest.kt)
 
 ---
 

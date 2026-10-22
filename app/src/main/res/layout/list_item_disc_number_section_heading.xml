@@ -5,7 +5,7 @@
 
         <variable
             name="sectionHeader"
-            type="local.oss.chronicle.features.bookdetails.ChapterListAdapter.SectionHeaderModel" />
+            type="io.github.mjohnson7cd.chronicleauto.features.bookdetails.ChapterListAdapter.SectionHeaderModel" />
 
         <import type="android.view.View" />
     </data>

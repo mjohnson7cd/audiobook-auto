@@ -64,14 +64,14 @@ graph TB
 
 | Component | Purpose |
 |-----------|---------|
-| [`Chapter`](../../app/src/main/java/local/oss/chronicle/data/model/Chapter.kt) | Entity storing chapter metadata with Room persistence |
-| [`PlexChapter`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/model/PlexChapter.kt) | Plex API chapter model |
-| [`ChapterDatabase`](../../app/src/main/java/local/oss/chronicle/data/local/ChapterDatabase.kt) | Room database for chapter persistence |
-| [`ChapterRepository`](../../app/src/main/java/local/oss/chronicle/data/local/ChapterRepository.kt) | Loads and persists chapter data |
-| [`ChapterListAdapter`](../../app/src/main/java/local/oss/chronicle/features/bookdetails/ChapterListAdapter.kt) | RecyclerView adapter for chapter list UI |
-| [`TrackListStateManager`](../../app/src/main/java/local/oss/chronicle/features/player/TrackListStateManager.kt) | Manages track queue and position state |
-| [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) | Single source of truth for current playback state |
-| [`ProgressUpdater`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) | Polls player position and updates chapter state |
+| [`Chapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Chapter.kt) | Entity storing chapter metadata with Room persistence |
+| [`PlexChapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/model/PlexChapter.kt) | Plex API chapter model |
+| [`ChapterDatabase`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterDatabase.kt) | Room database for chapter persistence |
+| [`ChapterRepository`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterRepository.kt) | Loads and persists chapter data |
+| [`ChapterListAdapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/ChapterListAdapter.kt) | RecyclerView adapter for chapter list UI |
+| [`TrackListStateManager`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/TrackListStateManager.kt) | Manages track queue and position state |
+| [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) | Single source of truth for current playback state |
+| [`ProgressUpdater`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) | Polls player position and updates chapter state |
 
 ---
 
@@ -79,7 +79,7 @@ graph TB
 
 ### Chapter Entity
 
-The [`Chapter`](../../app/src/main/java/local/oss/chronicle/data/model/Chapter.kt:10) entity stores chapter metadata:
+The [`Chapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Chapter.kt:10) entity stores chapter metadata:
 
 ```kotlin
 @Entity
@@ -109,7 +109,7 @@ data class Chapter(
 
 ### Chapter Detection
 
-The [`getChapterAt()`](../../app/src/main/java/local/oss/chronicle/data/model/Chapter.kt:51) extension function finds the chapter at a given position:
+The [`getChapterAt()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Chapter.kt:51) extension function finds the chapter at a given position:
 
 ```kotlin
 fun List<Chapter>.getChapterAt(trackId: Long, timeStamp: Long): Chapter {
@@ -156,7 +156,7 @@ sequenceDiagram
     VM-->>UI: Display chapter list
 ```
 
-**Implementation**: [`ChapterRepository.loadChapterData()`](../../app/src/main/java/local/oss/chronicle/data/local/ChapterRepository.kt:43)
+**Implementation**: [`ChapterRepository.loadChapterData()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterRepository.kt:43)
 
 **Key Changes**:
 - Chapter loading now library-aware via `ServerConnectionResolver` for multi-server setups
@@ -168,7 +168,7 @@ sequenceDiagram
 ### Fallback Behavior
 
 When a track has no embedded chapters:
-- A chapter is synthesized from the [`MediaItemTrack`](../../app/src/main/java/local/oss/chronicle/data/model/MediaItemTrack.kt) using [`track.asChapter()`](../../app/src/main/java/local/oss/chronicle/data/local/ChapterRepository.kt:66)
+- A chapter is synthesized from the [`MediaItemTrack`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/MediaItemTrack.kt) using [`track.asChapter()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterRepository.kt:66)
 - The track title becomes the chapter title
 - Chapter spans the entire track duration
 
@@ -178,7 +178,7 @@ Some Plex chapter responses include two markers for the same track:
 - A meaningful chapter entry that spans the real content
 - A second boundary marker of roughly 40-50 ms at the chapter end
 
-Those boundary markers are not useful for chapter navigation. If left unfiltered, they appear as duplicate entries with a displayed duration of `0:00`. Chronicle removes them with [`filterTransitionMarkers()`](../../app/src/main/java/local/oss/chronicle/data/model/Chapter.kt) whenever that track already has a real chapter, while still preserving genuinely short standalone chapters when no better chapter data exists.
+Those boundary markers are not useful for chapter navigation. If left unfiltered, they appear as duplicate entries with a displayed duration of `0:00`. Chronicle removes them with [`filterTransitionMarkers()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Chapter.kt) whenever that track already has a real chapter, while still preserving genuinely short standalone chapters when no better chapter data exists.
 
 ---
 
@@ -217,19 +217,19 @@ graph LR
 
 ### Detection Algorithm
 
-[`ProgressUpdater`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) is the **sole component** that updates chapter state during playback:
+[`ProgressUpdater`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) is the **sole component** that updates chapter state during playback:
 
 1. Every ~1 second, polls `MediaPlayer.getCurrentPosition()`
 2. Calculates absolute book position using track offsets
-3. Determines current chapter using [`getChapterAt()`](../../app/src/main/java/local/oss/chronicle/data/model/Chapter.kt:51)
-4. Updates [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) with new state
-5. [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) deduplicates identical updates to prevent UI flicker
+3. Determines current chapter using [`getChapterAt()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Chapter.kt:51)
+4. Updates [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) with new state
+5. [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) deduplicates identical updates to prevent UI flicker
 
 Before playback state and chapter lists consume embedded chapters, Chronicle filters transition markers so chapter selection is based on meaningful content chapters rather than the tiny boundary markers returned by Plex.
 
 ### Deduplication Guard
 
-To prevent flip-flopping, [`CurrentlyPlayingSingleton.update()`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) includes a deduplication check:
+To prevent flip-flopping, [`CurrentlyPlayingSingleton.update()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) includes a deduplication check:
 
 ```kotlin
 fun update(/* parameters */) {
@@ -287,11 +287,11 @@ Chronicle distinguishes between two position types:
 | **Track-relative** | Milliseconds from start of current track | Chapter navigation within a track |
 | **Book-absolute** | Milliseconds from start of first track | Overall progress, seekbar position |
 
-**Critical**: The [`EXTRA_ABSOLUTE_TRACK_POSITION`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) extras key provides the authoritative absolute position, avoiding manual calculation errors.
+**Critical**: The [`EXTRA_ABSOLUTE_TRACK_POSITION`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) extras key provides the authoritative absolute position, avoiding manual calculation errors.
 
 ### Conversion Logic
 
-[`TrackListStateManager`](../../app/src/main/java/local/oss/chronicle/features/player/TrackListStateManager.kt) handles position conversions:
+[`TrackListStateManager`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/TrackListStateManager.kt) handles position conversions:
 
 ```kotlin
 val currentBookPosition: Long
@@ -308,7 +308,7 @@ Where:
 
 ### Skip to Next/Previous Chapter
 
-The [`CurrentlyPlayingViewModel`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingViewModel.kt) implements chapter navigation:
+The [`CurrentlyPlayingViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingViewModel.kt) implements chapter navigation:
 
 ```mermaid
 stateDiagram-v2
@@ -322,15 +322,15 @@ stateDiagram-v2
 ```
 
 **Implementation**:
-- [`skipToNext()`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingViewModel.kt:432)
-- [`skipToPrevious()`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingViewModel.kt:436)
+- [`skipToNext()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingViewModel.kt:432)
+- [`skipToPrevious()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingViewModel.kt:436)
 
 ### Jump to Chapter from List
 
 When the user taps a chapter in the book details view:
 
-1. [`ChapterListAdapter`](../../app/src/main/java/local/oss/chronicle/features/bookdetails/ChapterListAdapter.kt) invokes [`TrackClickListener.onClick(chapter)`](../../app/src/main/java/local/oss/chronicle/features/bookdetails/ChapterListAdapter.kt:229)
-2. [`AudiobookDetailsViewModel.jumpToChapter()`](../../app/src/main/java/local/oss/chronicle/features/bookdetails/AudiobookDetailsViewModel.kt) is called with `chapter.startTimeOffset` and `chapter.trackId`
+1. [`ChapterListAdapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/ChapterListAdapter.kt) invokes [`TrackClickListener.onClick(chapter)`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/ChapterListAdapter.kt:229)
+2. [`AudiobookDetailsViewModel.jumpToChapter()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/AudiobookDetailsViewModel.kt) is called with `chapter.startTimeOffset` and `chapter.trackId`
 3. MediaSession transport controls seek to the chapter position
 
 ---
@@ -339,7 +339,7 @@ When the user taps a chapter in the book details view:
 
 ### Chapter List in Book Details
 
-[`ChapterListAdapter`](../../app/src/main/java/local/oss/chronicle/features/bookdetails/ChapterListAdapter.kt) displays chapters with:
+[`ChapterListAdapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/ChapterListAdapter.kt) displays chapters with:
 - Chapter title and duration
 - Active chapter highlighting
 - Disc section headers for multi-disc books
@@ -381,7 +381,7 @@ fun isActive(chapter: Chapter) =
     chapter.index == activeChapter.third
 ```
 
-Updates come from observing [`AudiobookDetailsViewModel.activeChapter`](../../app/src/main/java/local/oss/chronicle/features/bookdetails/AudiobookDetailsViewModel.kt) LiveData.
+Updates come from observing [`AudiobookDetailsViewModel.activeChapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/AudiobookDetailsViewModel.kt) LiveData.
 
 ---
 
@@ -393,16 +393,16 @@ Chapters would rapidly flip-flop between values during playback, causing UI flic
 
 ### Root Causes
 
-1. **Multiple update sources** - Several components updated [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) with conflicting values
-2. **Stale database reads** - Components reading from the database got values before [`ProgressUpdater`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) had written
+1. **Multiple update sources** - Several components updated [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) with conflicting values
+2. **Stale database reads** - Components reading from the database got values before [`ProgressUpdater`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) had written
 3. **Position confusion** - Mixing chapter-relative and book-absolute positions
 
 ### Solution
 
-1. **Single update source** - Only [`ProgressUpdater`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) updates playback state
-2. **Deduplication guard** - [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) skips identical consecutive updates
-3. **Authoritative position** - Use [`EXTRA_ABSOLUTE_TRACK_POSITION`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) from extras bundle, never calculate manually
-4. **Removed conflicting updates** - Eliminated `currentlyPlaying.update()` from [`OnMediaChangedCallback.onMetadataChanged()`](../../app/src/main/java/local/oss/chronicle/features/player/OnMediaChangedCallback.kt)
+1. **Single update source** - Only [`ProgressUpdater`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) updates playback state
+2. **Deduplication guard** - [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) skips identical consecutive updates
+3. **Authoritative position** - Use [`EXTRA_ABSOLUTE_TRACK_POSITION`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) from extras bundle, never calculate manually
+4. **Removed conflicting updates** - Eliminated `currentlyPlaying.update()` from [`OnMediaChangedCallback.onMetadataChanged()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/OnMediaChangedCallback.kt)
 
 For detailed fix documentation, see [`plans/CHAPTER_FLIPFLOP_FIX.md`](../../plans/CHAPTER_FLIPFLOP_FIX.md).
 
@@ -414,7 +414,7 @@ For detailed fix documentation, see [`plans/CHAPTER_FLIPFLOP_FIX.md`](../../plan
 
 Chapters appeared duplicated 2-4 times in the audiobook details screen. Each library re-sync accumulated additional duplicate chapter rows in the database.
 
-**Root Cause**: The primary key change from [`ChapterDatabase`](../../app/src/main/java/local/oss/chronicle/data/local/ChapterDatabase.kt) v1→v2 migration (from `id` to auto-generated `uid`) prevented `OnConflictStrategy.REPLACE` from detecting duplicates:
+**Root Cause**: The primary key change from [`ChapterDatabase`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterDatabase.kt) v1→v2 migration (from `id` to auto-generated `uid`) prevented `OnConflictStrategy.REPLACE` from detecting duplicates:
 
 ```kotlin
 // v1: Primary key was id (Plex rating key)
@@ -429,7 +429,7 @@ With auto-generated `uid` as the primary key, each chapter insert creates a new 
 
 ### Solution
 
-Implemented a **delete-before-insert** pattern in [`ChapterRepository.loadChapterData()`](../../app/src/main/java/local/oss/chronicle/data/local/ChapterRepository.kt):
+Implemented a **delete-before-insert** pattern in [`ChapterRepository.loadChapterData()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterRepository.kt):
 
 ```kotlin
 suspend fun loadChapterData(bookId: String, libraryId: String) {
@@ -453,7 +453,7 @@ This ensures:
 
 ### Test Coverage
 
-[`ChapterRepositoryTest`](../../app/src/test/java/local/oss/chronicle/data/local/ChapterRepositoryTest.kt) verifies:
+[`ChapterRepositoryTest`](../../app/src/test/java/io/github/mjohnson7cd/chronicleauto/data/local/ChapterRepositoryTest.kt) verifies:
 - No duplicates after multiple re-syncs
 - Correct delete-before-insert ordering
 - Chapter count matches expected values
@@ -462,13 +462,13 @@ This ensures:
 
 ## Critical Implementation Constraints
 
-1. **Single Update Source**: Only [`ProgressUpdater`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) should update [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) during playback
+1. **Single Update Source**: Only [`ProgressUpdater`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) should update [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) during playback
 
 2. **Use Absolute Positions**: Always use `EXTRA_ABSOLUTE_TRACK_POSITION` from extras bundle - never manually calculate from chapter offsets
 
-3. **Database is Async**: Never assume database reads reflect the latest state - use in-memory state from [`CurrentlyPlayingSingleton`](../../app/src/main/java/local/oss/chronicle/features/currentlyplaying/CurrentlyPlayingSingleton.kt) when available
+3. **Database is Async**: Never assume database reads reflect the latest state - use in-memory state from [`CurrentlyPlayingSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/currentlyplaying/CurrentlyPlayingSingleton.kt) when available
 
-4. **Chapter State is Derived**: The current chapter is calculated from position at runtime using [`getChapterAt()`](../../app/src/main/java/local/oss/chronicle/data/model/Chapter.kt:51), not stored separately
+4. **Chapter State is Derived**: The current chapter is calculated from position at runtime using [`getChapterAt()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/Chapter.kt:51), not stored separately
 
 5. **Track-Relative Offsets**: Chapter `startTimeOffset` and `endTimeOffset` are relative to the containing track, not the book
 

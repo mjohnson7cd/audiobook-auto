@@ -116,10 +116,10 @@ graph LR
 
 | Layer | Location | Responsibility |
 |-------|----------|----------------|
-| **Presentation** | [`features/`](../app/src/main/java/local/oss/chronicle/features/) | UI, ViewModels, user interaction |
+| **Presentation** | [`features/`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/) | UI, ViewModels, user interaction |
 | **Domain** | ViewModels, Repositories | Business logic, data transformation |
-| **Data** | [`data/`](../app/src/main/java/local/oss/chronicle/data/) | Storage, API calls, caching |
-| **Services** | [`features/player/`](../app/src/main/java/local/oss/chronicle/features/player/) | Background audio playback |
+| **Data** | [`data/`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/) | Storage, API calls, caching |
+| **Services** | [`features/player/`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/) | Background audio playback |
 
 → See [Architecture Layers](architecture/layers.md) for detailed layer descriptions.
 
@@ -131,9 +131,9 @@ Chronicle uses Dagger 2 with a three-component hierarchy:
 
 | Component | Scope | Purpose |
 |-----------|-------|---------|
-| [`AppComponent`](../app/src/main/java/local/oss/chronicle/injection/components/AppComponent.kt) | @Singleton | Application-wide dependencies |
-| [`ActivityComponent`](../app/src/main/java/local/oss/chronicle/injection/components/ActivityComponent.kt) | @ActivityScope | Activity-scoped dependencies |
-| [`ServiceComponent`](../app/src/main/java/local/oss/chronicle/injection/components/ServiceComponent.kt) | @ServiceScope | MediaPlayerService dependencies |
+| [`AppComponent`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/components/AppComponent.kt) | @Singleton | Application-wide dependencies |
+| [`ActivityComponent`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/components/ActivityComponent.kt) | @ActivityScope | Activity-scoped dependencies |
+| [`ServiceComponent`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/components/ServiceComponent.kt) | @ServiceScope | MediaPlayerService dependencies |
 
 → See [Dependency Injection](architecture/dependency-injection.md) for component hierarchy and module details.
 
@@ -184,7 +184,7 @@ Chronicle supports multiple Plex accounts and libraries:
 ## File Structure
 
 ```
-app/src/main/java/local/oss/chronicle/
+app/src/main/java/io/github/mjohnson7cd/chronicleauto/
 ├── application/          # Application class, MainActivity, Constants
 ├── data/
 │   ├── local/           # Room databases, DAOs, repositories

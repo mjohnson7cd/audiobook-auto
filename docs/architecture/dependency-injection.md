@@ -36,12 +36,12 @@ The component hierarchy follows a parent-child relationship:
 
 ## Components
 
-Located in [`injection/components/`](../../app/src/main/java/local/oss/chronicle/injection/components/)
+Located in [`injection/components/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/components/)
 
 ### AppComponent
 
 **Scope:** `@Singleton`  
-**File:** [`AppComponent.kt`](../../app/src/main/java/local/oss/chronicle/injection/components/AppComponent.kt)
+**File:** [`AppComponent.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/components/AppComponent.kt)
 
 The root component that provides application-wide dependencies. Created once when the application starts and lives for the entire application lifecycle.
 
@@ -55,7 +55,7 @@ The root component that provides application-wide dependencies. Created once whe
 ### ActivityComponent
 
 **Scope:** `@ActivityScope`  
-**File:** [`ActivityComponent.kt`](../../app/src/main/java/local/oss/chronicle/injection/components/ActivityComponent.kt)
+**File:** [`ActivityComponent.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/components/ActivityComponent.kt)
 
 Created for each activity instance. Provides activity-scoped dependencies and allows injection into Fragments.
 
@@ -66,7 +66,7 @@ Created for each activity instance. Provides activity-scoped dependencies and al
 ### ServiceComponent
 
 **Scope:** `@ServiceScope`  
-**File:** [`ServiceComponent.kt`](../../app/src/main/java/local/oss/chronicle/injection/components/ServiceComponent.kt)
+**File:** [`ServiceComponent.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/components/ServiceComponent.kt)
 
 Created for the MediaPlayerService. Provides all dependencies needed for audio playback.
 
@@ -80,11 +80,11 @@ Created for the MediaPlayerService. Provides all dependencies needed for audio p
 
 ## Modules
 
-Located in [`injection/modules/`](../../app/src/main/java/local/oss/chronicle/injection/modules/)
+Located in [`injection/modules/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/)
 
 ### AppModule
 
-**File:** [`AppModule.kt`](../../app/src/main/java/local/oss/chronicle/injection/modules/AppModule.kt)
+**File:** [`AppModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/AppModule.kt)
 
 Provides application-wide singleton dependencies:
 
@@ -102,7 +102,7 @@ Provides application-wide singleton dependencies:
 
 ### ActivityModule
 
-**File:** [`ActivityModule.kt`](../../app/src/main/java/local/oss/chronicle/injection/modules/ActivityModule.kt)
+**File:** [`ActivityModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/ActivityModule.kt)
 
 Provides activity-scoped dependencies:
 
@@ -114,7 +114,7 @@ Provides activity-scoped dependencies:
 
 ### ServiceModule
 
-**File:** [`ServiceModule.kt`](../../app/src/main/java/local/oss/chronicle/injection/modules/ServiceModule.kt)
+**File:** [`ServiceModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/ServiceModule.kt)
 
 Provides MediaPlayerService dependencies:
 
@@ -131,17 +131,17 @@ Provides MediaPlayerService dependencies:
 
 ## Custom Scopes
 
-Located in [`injection/scopes/`](../../app/src/main/java/local/oss/chronicle/injection/scopes/)
+Located in [`injection/scopes/`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/scopes/)
 
 ### @ActivityScope
 
-**File:** [`ActivityScope.kt`](../../app/src/main/java/local/oss/chronicle/injection/scopes/ActivityScope.kt)
+**File:** [`ActivityScope.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/scopes/ActivityScope.kt)
 
 Custom scope annotation for activity-scoped dependencies. Dependencies with this scope are created once per activity instance and shared across all fragments within that activity.
 
 ### @ServiceScope
 
-**File:** [`ServiceScope.kt`](../../app/src/main/java/local/oss/chronicle/injection/scopes/ServiceScope.kt)
+**File:** [`ServiceScope.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/scopes/ServiceScope.kt)
 
 Custom scope annotation for service-scoped dependencies. Dependencies with this scope are tied to the MediaPlayerService lifecycle.
 
@@ -151,7 +151,7 @@ Custom scope annotation for service-scoped dependencies. Dependencies with this 
 
 ### Application
 
-[`ChronicleApplication.kt`](../../app/src/main/java/local/oss/chronicle/application/ChronicleApplication.kt) creates and holds the AppComponent:
+[`ChronicleApplication.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/application/ChronicleApplication.kt) creates and holds the AppComponent:
 
 ```kotlin
 class ChronicleApplication : Application() {
@@ -168,7 +168,7 @@ class ChronicleApplication : Application() {
 
 ### Injector Utility
 
-[`Injector.kt`](../../app/src/main/java/local/oss/chronicle/application/Injector.kt) provides convenient access to components:
+[`Injector.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/application/Injector.kt) provides convenient access to components:
 
 ```kotlin
 object Injector {

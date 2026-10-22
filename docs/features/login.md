@@ -49,15 +49,15 @@ sequenceDiagram
 - **Polling with Timeout**: Checks for token every 1.5s, expedited to 200ms after callback, 2-minute timeout
 
 ### Key Files
-- [`PlexAuthCoordinator`](../../app/src/main/java/local/oss/chronicle/features/auth/PlexAuthCoordinator.kt) - OAuth state machine coordinator
-- [`PlexAuthUrlBuilder`](../../app/src/main/java/local/oss/chronicle/features/auth/PlexAuthUrlBuilder.kt) - Builds OAuth URL with proper encoding
-- [`PlexAuthState`](../../app/src/main/java/local/oss/chronicle/features/auth/PlexAuthState.kt) - Immutable state representation
-- [`AuthReturnActivity`](../../app/src/main/java/local/oss/chronicle/features/auth/AuthReturnActivity.kt) - App Link and deep link handler for auth callbacks
-- [`AuthCoordinatorSingleton`](../../app/src/main/java/local/oss/chronicle/features/auth/AuthCoordinatorSingleton.kt) - Cross-component communication bridge
-- [`LoginFragment`](../../app/src/main/java/local/oss/chronicle/features/login/LoginFragment.kt) - Login UI, launches Chrome Custom Tabs
-- [`LoginViewModel`](../../app/src/main/java/local/oss/chronicle/features/login/LoginViewModel.kt) - OAuth state management
-- [`PlexLoginRepo`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexLoginRepo.kt) - PIN creation and token polling
-- [`PlexLoginService`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexService.kt) - Plex API endpoints
+- [`PlexAuthCoordinator`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/PlexAuthCoordinator.kt) - OAuth state machine coordinator
+- [`PlexAuthUrlBuilder`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/PlexAuthUrlBuilder.kt) - Builds OAuth URL with proper encoding
+- [`PlexAuthState`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/PlexAuthState.kt) - Immutable state representation
+- [`AuthReturnActivity`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/AuthReturnActivity.kt) - App Link and deep link handler for auth callbacks
+- [`AuthCoordinatorSingleton`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/AuthCoordinatorSingleton.kt) - Cross-component communication bridge
+- [`LoginFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/login/LoginFragment.kt) - Login UI, launches Chrome Custom Tabs
+- [`LoginViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/login/LoginViewModel.kt) - OAuth state management
+- [`PlexLoginRepo`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexLoginRepo.kt) - PIN creation and token polling
+- [`PlexLoginService`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt) - Plex API endpoints
 - [`pages/.well-known/assetlinks.json`](../../pages/.well-known/assetlinks.json) - Digital Asset Links file for domain verification
 - [`pages/auth/callback/index.html`](../../pages/auth/callback/index.html) - Fallback page when App Links don't work (rare)
 
@@ -83,8 +83,8 @@ flowchart TD
 ```
 
 **Implementation**: 
-- [`ChooseUserFragment`](../../app/src/main/java/local/oss/chronicle/features/login/ChooseUserFragment.kt)
-- [`ChooseUserViewModel`](../../app/src/main/java/local/oss/chronicle/features/login/ChooseUserViewModel.kt)
+- [`ChooseUserFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/login/ChooseUserFragment.kt)
+- [`ChooseUserViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/login/ChooseUserViewModel.kt)
 
 ### Server Selection
 
@@ -106,16 +106,16 @@ flowchart TD
 ```
 
 **Implementation**: 
-- [`ChooseServerFragment`](../../app/src/main/java/local/oss/chronicle/features/login/ChooseServerFragment.kt)
-- [`PlexConfig.setPotentialConnections()`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexConfig.kt)
+- [`ChooseServerFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/login/ChooseServerFragment.kt)
+- [`PlexConfig.setPotentialConnections()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexConfig.kt)
 
 ### Library Selection
 
 Lists Music libraries from the selected server (audiobooks are stored as music in Plex):
 
 **Implementation**: 
-- [`ChooseLibraryFragment`](../../app/src/main/java/local/oss/chronicle/features/login/ChooseLibraryFragment.kt)
-- [`ChooseLibraryViewModel`](../../app/src/main/java/local/oss/chronicle/features/login/ChooseLibraryViewModel.kt)
+- [`ChooseLibraryFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/login/ChooseLibraryFragment.kt)
+- [`ChooseLibraryViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/login/ChooseLibraryViewModel.kt)
 
 ---
 
@@ -133,7 +133,7 @@ Chronicle uses **Android App Links** for OAuth callback to enable automatic Chro
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "local.oss.chronicle",
+      "package_name": "io.github.mjohnson7cd.chronicleauto",
       "sha256_cert_fingerprints": ["SHA256:..."]
     }
   }
@@ -176,7 +176,7 @@ When Chrome Custom Tabs navigates to `https://auth.chronicleapp.net/callback`:
 
 1. **Android intercepts**: System recognizes verified App Link before browser renders
 2. **Domain verification**: Checks Digital Asset Links file matches app signature
-3. **App launch**: Launches [`AuthReturnActivity`](../../app/src/main/java/local/oss/chronicle/features/auth/AuthReturnActivity.kt)
+3. **App launch**: Launches [`AuthReturnActivity`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/AuthReturnActivity.kt)
 4. **Auto-close**: Chrome Custom Tabs automatically closes since navigation was handled by app
 5. **Seamless return**: User sees Chronicle immediately without manual browser dismissal
 

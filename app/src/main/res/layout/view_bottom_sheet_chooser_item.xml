@@ -9,11 +9,11 @@
 
         <variable
             name="option"
-            type="local.oss.chronicle.views.BottomSheetChooser.FormattableString" />
+            type="io.github.mjohnson7cd.chronicleauto.views.BottomSheetChooser.FormattableString" />
 
         <variable
             name="listener"
-            type="local.oss.chronicle.views.BottomSheetChooser.BottomChooserListener" />
+            type="io.github.mjohnson7cd.chronicleauto.views.BottomSheetChooser.BottomChooserListener" />
     </data>
 
     <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"

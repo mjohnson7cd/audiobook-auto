@@ -812,7 +812,7 @@ companion object {
 **Test Structure:**
 
 ```
-app/src/test/java/local/oss/chronicle/
+app/src/test/java/io/github/mjohnson7cd/chronicleauto/
 └── data/sources/plex/
     ├── ProgressReportWorkerTest.kt          # ✅ NEW: Worker behavior
     ├── PlexProgressReporterTest.kt          # ✅ NEW: Progress reporting logic
@@ -1164,11 +1164,11 @@ suspend fun resolve(libraryId: String): ServerConnection {
 
 ## References
 
-- [`PlexSyncScrobbleWorker.kt`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/PlexSyncScrobbleWorker.kt) - Current implementation
-- [`ServerConnectionResolver.kt`](../../app/src/main/java/local/oss/chronicle/data/sources/plex/ServerConnectionResolver.kt) - Library-aware routing
-- [`RetryHandler.kt`](../../app/src/main/java/local/oss/chronicle/util/RetryHandler.kt) - Existing retry utility
-- [`ProgressUpdater.kt`](../../app/src/main/java/local/oss/chronicle/features/player/ProgressUpdater.kt) - Progress polling
-- [`PlaybackStateController.kt`](../../app/src/main/java/local/oss/chronicle/features/player/PlaybackStateController.kt) - State management
+- [`PlexSyncScrobbleWorker.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexSyncScrobbleWorker.kt) - Current implementation
+- [`ServerConnectionResolver.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/ServerConnectionResolver.kt) - Library-aware routing
+- [`RetryHandler.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/util/RetryHandler.kt) - Existing retry utility
+- [`ProgressUpdater.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt) - Progress polling
+- [`PlaybackStateController.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackStateController.kt) - State management
 - [WorkManager Documentation](https://developer.android.com/topic/libraries/architecture/workmanager)
 - [Retrofit Documentation](https://square.github.io/retrofit/)
 

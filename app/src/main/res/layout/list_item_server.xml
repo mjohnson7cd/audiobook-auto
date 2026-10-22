@@ -6,11 +6,11 @@
 
         <variable
             name="server"
-            type="local.oss.chronicle.data.model.ServerModel" />
+            type="io.github.mjohnson7cd.chronicleauto.data.model.ServerModel" />
 
         <variable
             name="clickListener"
-            type="local.oss.chronicle.features.login.ServerClickListener" />
+            type="io.github.mjohnson7cd.chronicleauto.features.login.ServerClickListener" />
 
     </data>
 

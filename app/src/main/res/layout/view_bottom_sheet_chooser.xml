@@ -7,15 +7,15 @@
 
         <variable
             name="title"
-            type="local.oss.chronicle.views.BottomSheetChooser.FormattableString" />
+            type="io.github.mjohnson7cd.chronicleauto.views.BottomSheetChooser.FormattableString" />
 
         <variable
             name="options"
-            type="java.util.List&lt;local.oss.chronicle.views.BottomSheetChooser.FormattableString&gt;" />
+            type="java.util.List&lt;io.github.mjohnson7cd.chronicleauto.views.BottomSheetChooser.FormattableString&gt;" />
 
         <variable
             name="listener"
-            type="local.oss.chronicle.views.BottomSheetChooser.BottomChooserListener" />
+            type="io.github.mjohnson7cd.chronicleauto.views.BottomSheetChooser.BottomChooserListener" />
 
         <import type="android.view.View" />
     </data>
