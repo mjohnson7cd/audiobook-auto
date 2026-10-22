@@ -80,6 +80,17 @@
             android:launchMode="singleTask"
             android:theme="@style/CarTheme" />
 
+        <!-- Car settings, reachable from the media center's settings button. Parked-only. -->
+        <activity
+            android:name="io.github.mjohnson7cd.audiobook.features.car.CarSettingsActivity"
+            android:exported="true"
+            android:label="@string/car_settings_title"
+            android:theme="@style/CarTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

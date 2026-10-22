@@ -15,5 +15,5 @@ object CarIntegration {
         Intent(context, CarSignInActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     /** The AAOS build has no launcher activity; the car settings screen stands in for it. */
-    fun sessionActivityIntent(context: Context): Intent? = null
+    fun sessionActivityIntent(context: Context): Intent? = Intent(context, CarSettingsActivity::class.java)
 }

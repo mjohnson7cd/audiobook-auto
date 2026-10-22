@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Parked-only car settings (reached via the media center's settings / APPLICATION_PREFERENCES). -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="48dp"
+        android:paddingTop="32dp"
+        android:paddingEnd="48dp"
+        android:paddingBottom="32dp">
+
+        <TextView
+            style="@style/CarText.Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="@string/car_settings_title" />
+
+        <TextView
+            style="@style/CarText.Body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/car_settings_account"
+            android:textColor="?attr/colorPrimary" />
+
+        <TextView
+            android:id="@+id/car_settings_account_status"
+            style="@style/CarText.Body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:id="@+id/car_settings_library_status"
+            style="@style/CarText.Body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/car_settings_sign_in"
+            style="@style/CarButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/car_settings_sign_in" />
+
+        <Button
+            android:id="@+id/car_settings_switch_library"
+            style="@style/CarButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/car_settings_switch_library" />
+
+        <Button
+            android:id="@+id/car_settings_sync"
+            style="@style/CarButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/car_settings_sync_now" />
+
+        <Button
+            android:id="@+id/car_settings_sign_out"
+            style="@style/CarButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/car_settings_sign_out" />
+
+        <TextView
+            style="@style/CarText.Body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/car_settings_playback"
+            android:textColor="?attr/colorPrimary" />
+
+        <!-- Each row cycles through its options on tap: one large target, no dialogs. -->
+        <Button
+            android:id="@+id/car_settings_jump_forward"
+            style="@style/CarButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/car_settings_jump_backward"
+            style="@style/CarButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/car_settings_speed"
+            style="@style/CarButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/car_settings_version"
+            style="@style/CarText.Body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp" />
+    </LinearLayout>
+</ScrollView>
