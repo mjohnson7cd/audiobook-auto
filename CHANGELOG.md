@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- build(flavors): `mobile` / `automotive` form-factor flavors; automotive versionCode = 1,000,000 + mobile
+- feat(aaos): Android Automotive OS (Google built-in) manifest overlay, no launcher activity
+- feat(aaos): in-car Plex sign-in via plex.tv/link code (parked-only)
+- feat(aaos): car settings screen (APPLICATION_PREFERENCES), parked-only
+- feat(aaos): "Sign in" error resolution in the media center; service-driven library sync in the car
+- feat(auth): short plex.tv/link PIN mode in PlexAuthCoordinator
+
 ## [0.62.0] - 2026-06-15
 
 - chore: bump version to 0.61.2-SNAPSHOT and update CHANGELOG.md (c4b3ad9)

@@ -1,5 +1,7 @@
 # Android Auto Support
 
+> For the Android Automotive OS (Google built-in, e.g. 2026 Silverado EV) build, see [android-automotive.md](android-automotive.md).
+
 This document covers Chronicle's Android Auto integration for in-car audiobook playback.
 
 ## Overview
