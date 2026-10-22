@@ -74,6 +74,12 @@ class CarSettingsActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.car_settings_sync_started, Toast.LENGTH_SHORT).show()
         }
         signOut.setOnClickListener { confirmSignOut() }
+        
+        // Back button
+        findViewById<Button>(R.id.car_settings_back).setOnClickListener {
+            finish()
+        }
+        
         jumpForward.setOnClickListener {
             prefsRepo.jumpForwardSeconds = nextOf(JUMP_OPTIONS_SECONDS, prefsRepo.jumpForwardSeconds)
             renderPlayback()

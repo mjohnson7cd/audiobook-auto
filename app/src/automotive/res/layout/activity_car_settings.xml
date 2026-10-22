@@ -14,6 +14,16 @@
         android:paddingEnd="48dp"
         android:paddingBottom="32dp">
 
+        <!-- Back button at the top -->
+        <Button
+            android:id="@+id/car_settings_back"
+            style="@style/CarButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="← Back"
+            android:textSize="18sp" />
+
         <TextView
             style="@style/CarText.Title"
             android:layout_width="wrap_content"
