@@ -87,7 +87,7 @@ fastlane screengrab
 
 # Method 2: Using Gradle directly
 ./gradlew connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=io.github.mjohnson7cd.chronicleauto.screenshot.ScreenshotTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=io.github.mjohnson7cd.audiobook.screenshot.ScreenshotTest \
   -Pandroid.testInstrumentationRunnerArguments.plexUsername="your@email.com" \
   -Pandroid.testInstrumentationRunnerArguments.plexPassword="yourpassword"
 ```
@@ -108,7 +108,7 @@ cp fastlane/screenshots/en-US/*.png images/screenshots/
 
 ### Customizing Screenshot Tests
 
-Edit [`app/src/androidTest/java/io/github/mjohnson7cd/chronicleauto/screenshot/ScreenshotTest.kt`](../app/src/androidTest/java/io/github/mjohnson7cd/chronicleauto/screenshot/ScreenshotTest.kt):
+Edit [`app/src/androidTest/java/io/github/mjohnson7cd/audiobook/screenshot/ScreenshotTest.kt`](../app/src/androidTest/java/io/github/mjohnson7cd/audiobook/screenshot/ScreenshotTest.kt):
 
 ```kotlin
 @Test

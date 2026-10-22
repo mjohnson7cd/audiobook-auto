@@ -8,7 +8,7 @@ Displays categorized audiobook lists:
 - **Recently Listened** - Books with in-progress playback
 - **Recently Added** - Newest additions to library
 
-**Implementation**: [`HomeFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/home/HomeFragment.kt), [`HomeViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/home/HomeViewModel.kt)
+**Implementation**: [`HomeFragment`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/home/HomeFragment.kt), [`HomeViewModel`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/home/HomeViewModel.kt)
 
 ---
 
@@ -25,7 +25,7 @@ Full library with sorting and filtering options:
 | Duration | Longest/shortest |
 | Year | Publication year |
 
-**Implementation**: [`LibraryFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/library/LibraryFragment.kt), [`LibraryViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/library/LibraryViewModel.kt)
+**Implementation**: [`LibraryFragment`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/library/LibraryFragment.kt), [`LibraryViewModel`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/library/LibraryViewModel.kt)
 
 ---
 
@@ -33,7 +33,7 @@ Full library with sorting and filtering options:
 
 Real-time search across audiobook titles and authors:
 
-**Implementation**: [`AudiobookSearchAdapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/library/AudiobookSearchAdapter.kt)
+**Implementation**: [`AudiobookSearchAdapter`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/library/AudiobookSearchAdapter.kt)
 
 ---
 
@@ -49,9 +49,9 @@ flowchart LR
 ```
 
 **Key Files**:
-- [`CollectionsFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/collections/CollectionsFragment.kt) - Collection list
-- [`CollectionDetailsFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/collections/CollectionDetailsFragment.kt) - Books in collection
-- [`CollectionsRepository`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/CollectionsRepository.kt) - Data management
+- [`CollectionsFragment`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/collections/CollectionsFragment.kt) - Collection list
+- [`CollectionDetailsFragment`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/collections/CollectionDetailsFragment.kt) - Books in collection
+- [`CollectionsRepository`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/local/CollectionsRepository.kt) - Data management
 
 ---
 
@@ -68,8 +68,8 @@ Displays comprehensive audiobook information:
 - Download status
 
 **Implementation**: 
-- [`AudiobookDetailsFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/AudiobookDetailsFragment.kt)
-- [`AudiobookDetailsViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/AudiobookDetailsViewModel.kt)
+- [`AudiobookDetailsFragment`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/bookdetails/AudiobookDetailsFragment.kt)
+- [`AudiobookDetailsViewModel`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/bookdetails/AudiobookDetailsViewModel.kt)
 
 ### Chapter Navigation
 
@@ -84,7 +84,7 @@ flowchart TD
     E --> F[Seek to chapter start]
 ```
 
-**Implementation**: [`ChapterListAdapter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/bookdetails/ChapterListAdapter.kt)
+**Implementation**: [`ChapterListAdapter`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/bookdetails/ChapterListAdapter.kt)
 
 ---
 

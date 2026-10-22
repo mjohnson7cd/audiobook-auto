@@ -72,11 +72,11 @@ graph TB
 
 ### Key Components
 
-1. **[`PlexAuthCoordinator`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/PlexAuthCoordinator.kt)** - State machine managing the OAuth flow
-2. **[`PlexAuthUrlBuilder`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/PlexAuthUrlBuilder.kt)** - Constructs OAuth URL with `forwardUrl` set to App Link
-3. **[`PlexAuthState`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/PlexAuthState.kt)** - Immutable state representation
-4. **[`AuthReturnActivity`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/AuthReturnActivity.kt)** - Handles App Link and legacy deep link callbacks
-5. **[`AuthCoordinatorSingleton`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/AuthCoordinatorSingleton.kt)** - Bridges Activity and Coordinator
+1. **[`PlexAuthCoordinator`](../app/src/main/java/io/github/mjohnson7cd/audiobook/features/auth/PlexAuthCoordinator.kt)** - State machine managing the OAuth flow
+2. **[`PlexAuthUrlBuilder`](../app/src/main/java/io/github/mjohnson7cd/audiobook/features/auth/PlexAuthUrlBuilder.kt)** - Constructs OAuth URL with `forwardUrl` set to App Link
+3. **[`PlexAuthState`](../app/src/main/java/io/github/mjohnson7cd/audiobook/features/auth/PlexAuthState.kt)** - Immutable state representation
+4. **[`AuthReturnActivity`](../app/src/main/java/io/github/mjohnson7cd/audiobook/features/auth/AuthReturnActivity.kt)** - Handles App Link and legacy deep link callbacks
+5. **[`AuthCoordinatorSingleton`](../app/src/main/java/io/github/mjohnson7cd/audiobook/features/auth/AuthCoordinatorSingleton.kt)** - Bridges Activity and Coordinator
 6. **[`pages/.well-known/assetlinks.json`](../pages/.well-known/assetlinks.json)** - Digital Asset Links for domain verification
 7. **[`pages/auth/callback/index.html`](../pages/auth/callback/index.html)** - Fallback page when App Links fail (rare)
 
@@ -204,7 +204,7 @@ fun buildOAuthUrl(clientId: String, pinCode: String): String {
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "io.github.mjohnson7cd.chronicleauto",
+      "package_name": "io.github.mjohnson7cd.audiobook",
       "sha256_cert_fingerprints": [
         "SHA256:..."
       ]
@@ -256,7 +256,7 @@ This is **superior to custom URI schemes** (`chronicle://`) which do NOT auto-cl
 
 ### 3. State Machine
 
-[`PlexAuthState`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/PlexAuthState.kt) represents all possible states:
+[`PlexAuthState`](../app/src/main/java/io/github/mjohnson7cd/audiobook/features/auth/PlexAuthState.kt) represents all possible states:
 
 ```
 Idle → CreatingPin → WaitingForUser → Polling → Success/Error/Timeout/Cancelled
@@ -298,7 +298,7 @@ fun onBrowserReturned() {
 
 ### 5. Cross-Component Communication
 
-[`AuthCoordinatorSingleton`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/auth/AuthCoordinatorSingleton.kt) bridges the Activity and Coordinator:
+[`AuthCoordinatorSingleton`](../app/src/main/java/io/github/mjohnson7cd/audiobook/features/auth/AuthCoordinatorSingleton.kt) bridges the Activity and Coordinator:
 
 ```kotlin
 object AuthCoordinatorSingleton {
@@ -401,8 +401,8 @@ Chrome Custom Tabs runs in the user's browser process with full browser security
 ### Unit Tests
 
 Created tests for:
-- ✅ [`PlexAuthUrlBuilderTest`](../app/src/test/java/io/github/mjohnson7cd/chronicleauto/features/auth/PlexAuthUrlBuilderTest.kt) - URL construction and encoding
-- ✅ [`AuthCoordinatorSingletonTest`](../app/src/test/java/io/github/mjohnson7cd/chronicleauto/features/auth/AuthCoordinatorSingletonTest.kt) - Singleton registration/delegation
+- ✅ [`PlexAuthUrlBuilderTest`](../app/src/test/java/io/github/mjohnson7cd/audiobook/features/auth/PlexAuthUrlBuilderTest.kt) - URL construction and encoding
+- ✅ [`AuthCoordinatorSingletonTest`](../app/src/test/java/io/github/mjohnson7cd/audiobook/features/auth/AuthCoordinatorSingletonTest.kt) - Singleton registration/delegation
 
 **Note**: `PlexAuthCoordinatorTest` was omitted due to complexity of testing background coroutines with timing. The coordinator is tested through integration testing and manual testing.
 

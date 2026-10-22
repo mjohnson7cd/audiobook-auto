@@ -10,14 +10,14 @@
 This design has been **fully implemented** and tested. The following files were created:
 
 - **Core Implementation:**
-  - [`PlexHttpDataSourceFactory.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexHttpDataSourceFactory.kt) - Custom DataSource.Factory that performs lazy token injection on each HTTP request
-  - [`SecurityUtils.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/util/SecurityUtils.kt) - Security utilities for header redaction in logs
+  - [`PlexHttpDataSourceFactory.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexHttpDataSourceFactory.kt) - Custom DataSource.Factory that performs lazy token injection on each HTTP request
+  - [`SecurityUtils.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/util/SecurityUtils.kt) - Security utilities for header redaction in logs
 
 - **Testing:**
-  - [`PlexHttpDataSourceFactoryTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexHttpDataSourceFactoryTest.kt) - Comprehensive unit tests covering token injection, fallback, and thread safety
+  - [`PlexHttpDataSourceFactoryTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexHttpDataSourceFactoryTest.kt) - Comprehensive unit tests covering token injection, fallback, and thread safety
 
 - **Integration:**
-  - Updated [`ServiceModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/ServiceModule.kt) to provide `PlexHttpDataSourceFactory` instead of `DefaultHttpDataSource.Factory`
+  - Updated [`ServiceModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/modules/ServiceModule.kt) to provide `PlexHttpDataSourceFactory` instead of `DefaultHttpDataSource.Factory`
 
 ---
 
@@ -53,7 +53,7 @@ This design has been **fully implemented** and tested. The following files were 
 
 ### Current Implementation
 
-In [`ServiceModule.kt:149-179`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/ServiceModule.kt#L149-L179), the `plexDataSourceFactory()` provider method creates a `DefaultHttpDataSource.Factory` and calls `setDefaultRequestProperties()`:
+In [`ServiceModule.kt:149-179`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/modules/ServiceModule.kt#L149-L179), the `plexDataSourceFactory()` provider method creates a `DefaultHttpDataSource.Factory` and calls `setDefaultRequestProperties()`:
 
 ```kotlin
 @Provides
@@ -78,7 +78,7 @@ fun plexDataSourceFactory(plexPrefs: PlexPrefsRepo): DefaultHttpDataSource.Facto
 
 ### The Race Condition
 
-1. **Service Initialization** ([`MediaPlayerService.kt:226-233`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt#L226-L233)):
+1. **Service Initialization** ([`MediaPlayerService.kt:226-233`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/player/MediaPlayerService.kt#L226-L233)):
    ```kotlin
    override fun onCreate() {
        super.onCreate()
@@ -107,7 +107,7 @@ fun plexDataSourceFactory(plexPrefs: PlexPrefsRepo): DefaultHttpDataSource.Facto
 
 ### Evidence from PlexInterceptor Pattern
 
-[`PlexInterceptor.kt:47-78`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt#L47-L78) demonstrates the correct pattern for Retrofit/OkHttp:
+[`PlexInterceptor.kt:47-78`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt#L47-L78) demonstrates the correct pattern for Retrofit/OkHttp:
 
 ```kotlin
 override fun intercept(chain: Interceptor.Chain): Response {
@@ -138,10 +138,10 @@ To confirm the race condition and track token states during debugging, we'll add
 
 #### Token Hashing Utility
 
-**Location:** `app/src/main/java/io/github/mjohnson7cd/chronicleauto/util/SecurityUtils.kt` (new file)
+**Location:** `app/src/main/java/io/github/mjohnson7cd/audiobook/util/SecurityUtils.kt` (new file)
 
 ```kotlin
-package io.github.mjohnson7cd.chronicleauto.util
+package io.github.mjohnson7cd.audiobook.util
 
 import java.security.MessageDigest
 import timber.log.Timber
@@ -202,7 +202,7 @@ fun plexDataSourceFactory(plexPrefs: PlexPrefsRepo): DefaultHttpDataSource.Facto
 
 **2. SharedPreferencesPlexPrefsRepo** - Log when tokens are loaded from disk:
 
-Add to [`SharedPreferencesPlexPrefsRepo.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/SharedPreferencesPlexPrefsRepo.kt) getters:
+Add to [`SharedPreferencesPlexPrefsRepo.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/SharedPreferencesPlexPrefsRepo.kt) getters:
 
 ```kotlin
 override var accountAuthToken: String
@@ -216,7 +216,7 @@ override var accountAuthToken: String
 
 **3. MediaPlayerService.onCreate()** - Track initialization order:
 
-Add to [`MediaPlayerService.kt:226`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt#L226):
+Add to [`MediaPlayerService.kt:226`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/player/MediaPlayerService.kt#L226):
 
 ```kotlin
 override fun onCreate() {
@@ -262,17 +262,17 @@ Create a custom `HttpDataSource.Factory` that reads tokens **lazily** on every `
 
 #### Class Design
 
-**Location:** `app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexHttpDataSourceFactory.kt` (new file)
+**Location:** `app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexHttpDataSourceFactory.kt` (new file)
 
 ```kotlin
-package io.github.mjohnson7cd.chronicleauto.data.sources.plex
+package io.github.mjohnson7cd.audiobook.data.sources.plex
 
 import android.content.Context
 import android.os.Build
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
-import io.github.mjohnson7cd.chronicleauto.BuildConfig
+import io.github.mjohnson7cd.audiobook.BuildConfig
 import timber.log.Timber
 
 /**
@@ -321,7 +321,7 @@ class PlexHttpDataSourceFactory(
         val authToken = serverToken ?: userToken ?: accountToken
         
         if (BuildConfig.DEBUG) {
-            val tokenHash = io.github.mjohnson7cd.chronicleauto.util.SecurityUtils.hashToken(authToken)
+            val tokenHash = io.github.mjohnson7cd.audiobook.util.SecurityUtils.hashToken(authToken)
             Timber.d(
                 "[TokenInjection] PlexHttpDataSourceFactory.createDataSource(): " +
                 "token=$tokenHash, hasServerToken=${serverToken != null}, " +
@@ -383,13 +383,13 @@ class PlexHttpDataSourceFactory(
 2. `user.authToken` - User profile token
 3. `accountAuthToken` - Account-level token (fallback)
 
-This matches the logic in [`PlexInterceptor.kt:66-71`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt#L66-L71).
+This matches the logic in [`PlexInterceptor.kt:66-71`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt#L66-L71).
 
 ---
 
 ### 3. ServiceModule Integration
 
-Update [`ServiceModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/ServiceModule.kt) to use the new factory.
+Update [`ServiceModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/modules/ServiceModule.kt) to use the new factory.
 
 #### Before (Current)
 
@@ -445,7 +445,7 @@ Check where `plexDataSourceFactory` is injected:
 
 ```bash
 # Search for injection points
-grep -r "HttpDataSource.Factory" app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/
+grep -r "HttpDataSource.Factory" app/src/main/java/io/github/mjohnson7cd/audiobook/features/player/
 ```
 
 Expected result: `AudiobookMediaSessionCallback` or similar classes that build ExoPlayer media sources.
@@ -456,19 +456,19 @@ Expected result: `AudiobookMediaSessionCallback` or similar classes that build E
 
 #### Unit Tests
 
-**Location:** `app/src/test/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexHttpDataSourceFactoryTest.kt` (new file)
+**Location:** `app/src/test/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexHttpDataSourceFactoryTest.kt` (new file)
 
 ```kotlin
-package io.github.mjohnson7cd.chronicleauto.data.sources.plex
+package io.github.mjohnson7cd.audiobook.data.sources.plex
 
 import android.content.Context
 import androidx.media3.datasource.HttpDataSource
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import io.github.mjohnson7cd.chronicleauto.data.model.PlexLibrary
-import io.github.mjohnson7cd.chronicleauto.data.model.ServerModel
-import io.github.mjohnson7cd.chronicleauto.data.sources.plex.model.PlexUser
+import io.github.mjohnson7cd.audiobook.data.model.PlexLibrary
+import io.github.mjohnson7cd.audiobook.data.model.ServerModel
+import io.github.mjohnson7cd.audiobook.data.sources.plex.model.PlexUser
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -790,10 +790,10 @@ Currently, tokens are read fresh but never actively refreshed. Consider:
 
 ## References
 
-- **Problem Location:** [`ServiceModule.kt:149-179`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/ServiceModule.kt#L149-L179)
-- **Working Pattern:** [`PlexInterceptor.kt:47-78`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt#L47-L78)
-- **Service Lifecycle:** [`MediaPlayerService.kt:226-233`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaPlayerService.kt#L226-L233)
-- **Token Storage:** [`SharedPreferencesPlexPrefsRepo.kt:87-93`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/SharedPreferencesPlexPrefsRepo.kt#L87-L93)
+- **Problem Location:** [`ServiceModule.kt:149-179`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/modules/ServiceModule.kt#L149-L179)
+- **Working Pattern:** [`PlexInterceptor.kt:47-78`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt#L47-L78)
+- **Service Lifecycle:** [`MediaPlayerService.kt:226-233`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/player/MediaPlayerService.kt#L226-L233)
+- **Token Storage:** [`SharedPreferencesPlexPrefsRepo.kt:87-93`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/SharedPreferencesPlexPrefsRepo.kt#L87-L93)
 
 ---
 

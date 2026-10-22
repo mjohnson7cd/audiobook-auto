@@ -50,7 +50,7 @@ If these invariants are validated, voice commands WILL work:
 
 ### 1. JVM Unit Tests
 
-#### [`PlaybackResumeLogicTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/chronicleauto/features/player/PlaybackResumeLogicTest.kt)
+#### [`PlaybackResumeLogicTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/audiobook/features/player/PlaybackResumeLogicTest.kt)
 **Tests:** 14 | **Focus:** Resume/playback state logic
 
 | Test | Voice Command Validated |
@@ -60,7 +60,7 @@ If these invariants are validated, voice commands WILL work:
 | Multiple pause/play cycles maintain position | Continuous use |
 | State transitions correctly | All transport controls |
 
-#### [`AudiobookMediaSessionCallbackTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallbackTest.kt)
+#### [`AudiobookMediaSessionCallbackTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/audiobook/features/player/AudiobookMediaSessionCallbackTest.kt)
 **Tests:** 25 | **Focus:** MediaSession callback handling
 
 | Test | Voice Command Validated |
@@ -77,7 +77,7 @@ If these invariants are validated, voice commands WILL work:
 
 ### 2. Robolectric Tests
 
-#### [`MediaSessionStateTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaSessionStateTest.kt)
+#### [`MediaSessionStateTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/audiobook/features/player/MediaSessionStateTest.kt)
 **Tests:** 11 | **Focus:** MediaSession state validation
 
 | Test | Voice Command Validated |
@@ -89,7 +89,7 @@ If these invariants are validated, voice commands WILL work:
 
 ### 3. Instrumentation Tests
 
-#### [`MediaBrowserTransportControlsTest.kt`](../../app/src/androidTest/java/io/github/mjohnson7cd/chronicleauto/features/player/MediaBrowserTransportControlsTest.kt)
+#### [`MediaBrowserTransportControlsTest.kt`](../../app/src/androidTest/java/io/github/mjohnson7cd/audiobook/features/player/MediaBrowserTransportControlsTest.kt)
 **Tests:** 7 | **Focus:** End-to-end MediaBrowser integration
 
 | Test | What It Validates |

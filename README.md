@@ -9,7 +9,7 @@
 > **https://github.com/fabiogermann/chronicle**
 >
 > This fork is not affiliated with or endorsed by the Chronicle project. It uses its own
-> package name (`io.github.mjohnson7cd.chronicleauto`), name, and icons, and focuses on
+> package name (`io.github.mjohnson7cd.audiobook`), name, and icons, and focuses on
 > Android Auto.
 
 An Android audiobook player for Plex Media Server, with a focus on Android Auto.

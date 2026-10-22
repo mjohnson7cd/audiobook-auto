@@ -8,7 +8,7 @@ Chronicle currently sends `POST /playQueues` to create play queues and `GET /:/t
 
 The Plex server dashboard doesn't show Chronicle as actively streaming because:
 
-1. **Inconsistent Client Identifier**: The scoped interceptor in [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) uses `plexConfig.sessionIdentifier` for `X-Plex-Client-Identifier`, while the main [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt) uses `plexPrefsRepo.uuid`. Plex cannot correlate requests with different client identifiers.
+1. **Inconsistent Client Identifier**: The scoped interceptor in [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt) uses `plexConfig.sessionIdentifier` for `X-Plex-Client-Identifier`, while the main [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt) uses `plexPrefsRepo.uuid`. Plex cannot correlate requests with different client identifiers.
 
 2. **Missing Session Headers**: The scoped interceptor lacks critical headers that link timeline updates to sessions:
    - `X-Plex-Session-Identifier`
@@ -16,7 +16,7 @@ The Plex server dashboard doesn't show Chronicle as actively streaming because:
    - `X-Plex-Device`
    - `X-Plex-Device-Name`
 
-3. **Missing Play Queue Item IDs**: When `POST /playQueues` returns, it provides `playQueueItemID` values for each track. Chronicle never captures these. [`MediaItemTrack.playQueueItemID`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/model/MediaItemTrack.kt) defaults to `-1`, which is sent in every `GET /:/timeline` call, preventing Plex from associating timeline updates with the play queue.
+3. **Missing Play Queue Item IDs**: When `POST /playQueues` returns, it provides `playQueueItemID` values for each track. Chronicle never captures these. [`MediaItemTrack.playQueueItemID`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/model/MediaItemTrack.kt) defaults to `-1`, which is sent in every `GET /:/timeline` call, preventing Plex from associating timeline updates with the play queue.
 
 ### Success Criteria
 
@@ -29,7 +29,7 @@ After implementing this fix:
 
 ### 1. Header Alignment Fix
 
-**File**: [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt)
+**File**: [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt)
 
 #### Current Implementation (lines 276-294)
 
@@ -95,15 +95,15 @@ private fun createScopedInterceptor(authToken: String): Interceptor {
 ```
 
 **Dependencies**:
-- Add `private val plexPrefsRepo: PlexPrefsRepo` to [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) constructor
+- Add `private val plexPrefsRepo: PlexPrefsRepo` to [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt) constructor
 - Make `PlexInterceptor.CLIENT_PROFILE_EXTRA` public so it can be referenced
 
 ### 2. Play Queue Response Model
 
-**New File**: `app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/model/PlayQueueResponse.kt`
+**New File**: `app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/model/PlayQueueResponse.kt`
 
 ```kotlin
-package io.github.mjohnson7cd.chronicleauto.data.sources.plex.model
+package io.github.mjohnson7cd.audiobook.data.sources.plex.model
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -148,7 +148,7 @@ fun PlayQueueResponseWrapper.toPlayQueueItemMap(): Map<String, Long> {
 
 ### 3. PlexService API Update
 
-**File**: [`PlexService.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt)
+**File**: [`PlexService.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt)
 
 #### Current Implementation (lines 123-131)
 
@@ -186,7 +186,7 @@ suspend fun startMediaSession(
 
 ### 4. Play Queue State Storage
 
-**File**: [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt)
+**File**: [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt)
 
 Add in-memory storage for play queue item IDs:
 
@@ -231,7 +231,7 @@ class PlexProgressReporter @Inject constructor(
 
 ### 5. Update startMediaSession() Implementation
 
-**File**: [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt)
+**File**: [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt)
 
 #### Current Implementation (lines 174-236)
 
@@ -342,7 +342,7 @@ suspend fun startMediaSession(
 
 ### 6. Update reportProgress() to Use Cached IDs
 
-**File**: [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt)
+**File**: [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt)
 
 #### Current Implementation (lines 75-127)
 
@@ -444,7 +444,7 @@ suspend fun reportProgress(
 
 ### 7. Clear Cache on Stop
 
-**File**: [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt)
+**File**: [`AudiobookMediaSessionCallback.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/player/AudiobookMediaSessionCallback.kt)
 
 Update the `onStop()` method to clear the play queue cache:
 
@@ -510,28 +510,28 @@ sequenceDiagram
 
 ### Phase 1: Header Alignment (Low Risk)
 - [ ] Make `PlexInterceptor.CLIENT_PROFILE_EXTRA` public (change `private const val` to `const val`)
-- [ ] Add `plexPrefsRepo: PlexPrefsRepo` to [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) constructor
-- [ ] Update [`PlexProgressReporter.createScopedInterceptor()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) to use `plexPrefsRepo.uuid` instead of `plexConfig.sessionIdentifier`
+- [ ] Add `plexPrefsRepo: PlexPrefsRepo` to [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt) constructor
+- [ ] Update [`PlexProgressReporter.createScopedInterceptor()`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt) to use `plexPrefsRepo.uuid` instead of `plexConfig.sessionIdentifier`
 - [ ] Add missing headers to scoped interceptor: `X-Plex-Session-Identifier`, `X-Plex-Client-Name`, `X-Plex-Client-Profile-Extra`
 - [ ] Update Dagger modules to provide `PlexPrefsRepo` to `PlexProgressReporter`
 
 ### Phase 2: Play Queue Response Capture (Medium Risk)
 - [ ] Create `PlayQueueResponse.kt` model file with Moshi annotations
-- [ ] Update [`PlexService.startMediaSession()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt) to return `PlayQueueResponseWrapper`
-- [ ] Add `playQueueItemCache` to [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt)
-- [ ] Implement `clearPlayQueueCache()` in [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt)
-- [ ] Update [`PlexProgressReporter.startMediaSession()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) to parse response and populate cache
+- [ ] Update [`PlexService.startMediaSession()`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt) to return `PlayQueueResponseWrapper`
+- [ ] Add `playQueueItemCache` to [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt)
+- [ ] Implement `clearPlayQueueCache()` in [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt)
+- [ ] Update [`PlexProgressReporter.startMediaSession()`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt) to parse response and populate cache
 
 ### Phase 3: Use Cached IDs in Progress Reports (Low Risk)
-- [ ] Update [`PlexProgressReporter.reportProgress()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) to use cached `playQueueItemId`
+- [ ] Update [`PlexProgressReporter.reportProgress()`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt) to use cached `playQueueItemId`
 - [ ] Add warning log when playQueueItemId is -1 (cache miss)
-- [ ] Update [`AudiobookMediaSessionCallback.onStop()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/AudiobookMediaSessionCallback.kt) to call `clearPlayQueueCache()`
+- [ ] Update [`AudiobookMediaSessionCallback.onStop()`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/player/AudiobookMediaSessionCallback.kt) to call `clearPlayQueueCache()`
 
 ## Testing Strategy
 
 ### Unit Tests
 
-**New Test File**: `app/src/test/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlayQueueResponseTest.kt`
+**New Test File**: `app/src/test/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlayQueueResponseTest.kt`
 
 ```kotlin
 class PlayQueueResponseTest {
@@ -556,7 +556,7 @@ class PlayQueueResponseTest {
 }
 ```
 
-**Update Existing Test**: `app/src/test/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporterTest.kt`
+**Update Existing Test**: `app/src/test/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporterTest.kt`
 
 ```kotlin
 @Test
@@ -734,7 +734,7 @@ This configuration balances:
 - Efficient network usage (30-second reporting to Plex)
 - Plex dashboard activity requirements (updates within 30-second window)
 
-**Implementation**: See [`ProgressUpdater.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt)
+**Implementation**: See [`ProgressUpdater.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/player/ProgressUpdater.kt)
 
 ---
 

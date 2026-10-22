@@ -13,7 +13,7 @@ Chronicle communicates with two Plex endpoints:
 
 ## Authentication Headers
 
-All requests include these headers via [`PlexInterceptor`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt):
+All requests include these headers via [`PlexInterceptor`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt):
 
 ```http
 X-Plex-Product: Chronicle
@@ -107,7 +107,7 @@ X-Plex-Client-Identifier: {unique-client-id}
 }
 ```
 
-**Implementation:** [`PlexLoginRepo.postOAuthPin()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexLoginRepo.kt), [`PlexLoginRepo.checkForOAuthAccessToken()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexLoginRepo.kt)
+**Implementation:** [`PlexLoginRepo.postOAuthPin()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexLoginRepo.kt), [`PlexLoginRepo.checkForOAuthAccessToken()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexLoginRepo.kt)
 
 ## 2. Server Discovery
 
@@ -156,7 +156,7 @@ X-Plex-Token: {auth-token}
 ]
 ```
 
-**Implementation:** [`PlexLoginService.resources()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt)
+**Implementation:** [`PlexLoginService.resources()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt)
 
 ### Connection Testing
 
@@ -176,7 +176,7 @@ GET {server-url}/identity
 X-Plex-Token: {server-token}
 ```
 
-**Implementation:** [`PlexConfig.setPotentialConnections()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexConfig.kt)
+**Implementation:** [`PlexConfig.setPotentialConnections()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexConfig.kt)
 
 ## 3. User Selection (Managed Users)
 
@@ -230,7 +230,7 @@ pin={optional-user-pin}
 }
 ```
 
-**Implementation:** [`PlexLoginService.getUsersForAccount()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt), [`PlexLoginService.pickUser()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt)
+**Implementation:** [`PlexLoginService.getUsersForAccount()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt), [`PlexLoginService.pickUser()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt)
 
 ## 4. Library Discovery
 
@@ -261,7 +261,7 @@ X-Plex-Token: {token}
 }
 ```
 
-**Implementation:** [`PlexMediaService.retrieveLibraries()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt)
+**Implementation:** [`PlexMediaService.retrieveLibraries()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt)
 
 ## 5. Library Sync
 
@@ -318,7 +318,7 @@ X-Plex-Token: {token}
 | 9 | Album |
 | 10 | Track |
 
-**Implementation:** [`PlexMediaService.retrieveAlbumPage()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt), [`BookRepository.refreshDataPaginated()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/local/BookRepository.kt)
+**Implementation:** [`PlexMediaService.retrieveAlbumPage()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt), [`BookRepository.refreshDataPaginated()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/local/BookRepository.kt)
 
 ### Fetch Tracks
 
@@ -357,7 +357,7 @@ X-Plex-Token: {token}
 }
 ```
 
-**Implementation:** [`PlexMediaService.retrieveTracksPaginated()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt)
+**Implementation:** [`PlexMediaService.retrieveTracksPaginated()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt)
 
 ## 6. Audiobook/Track Metadata
 
@@ -412,7 +412,7 @@ X-Plex-Token: {token}
 }
 ```
 
-**Implementation:** [`PlexMediaService.retrieveChapterInfo()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt)
+**Implementation:** [`PlexMediaService.retrieveChapterInfo()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt)
 
 ## 7. Collections
 
@@ -432,7 +432,7 @@ GET {server}/library/collections/{collectionId}/children
 X-Plex-Token: {token}
 ```
 
-**Implementation:** [`PlexMediaService.retrieveCollectionsPaginated()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt), [`PlexMediaService.fetchBooksInCollection()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt)
+**Implementation:** [`PlexMediaService.retrieveCollectionsPaginated()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt), [`PlexMediaService.fetchBooksInCollection()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt)
 
 ## 8. Playback URL Resolution
 
@@ -517,7 +517,7 @@ X-Plex-Client-Profile-Extra: add-direct-play-profile(type=musicProfile&container
 | 3001 | MDE | Bandwidth exceeded |
 | 4005 | Transcode | No profile found |
 
-**Implementation:** [`PlexMediaService.getPlaybackDecision()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt), [`PlaybackUrlResolver`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlaybackUrlResolver.kt)
+**Implementation:** [`PlexMediaService.getPlaybackDecision()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt), [`PlaybackUrlResolver`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlaybackUrlResolver.kt)
 
 ## 9. Progress Tracking (Scrobbling)
 
@@ -533,7 +533,7 @@ POST {server}/playQueues
 X-Plex-Token: {token}
 ```
 
-**Implementation:** [`PlexMediaService.startMediaSession()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt)
+**Implementation:** [`PlexMediaService.startMediaSession()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt)
 
 ### Timeline Update
 
@@ -570,7 +570,7 @@ X-Plex-Token: {token}
 | paused | Paused |
 | stopped | Playback ended |
 
-**Implementation:** [`PlexMediaService.progress()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt), [`ProgressUpdater`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/player/ProgressUpdater.kt)
+**Implementation:** [`PlexMediaService.progress()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt), [`ProgressUpdater`](../app/src/main/java/io/github/mjohnson7cd/audiobook/features/player/ProgressUpdater.kt)
 
 ### Mark as Watched/Unwatched
 
@@ -582,7 +582,7 @@ GET {server}/:/scrobble?key=/library/metadata/{id}&identifier=com.plexapp.plugin
 GET {server}/:/unscrobble?key=/library/metadata/{id}&identifier=com.plexapp.plugins.library
 ```
 
-**Implementation:** [`PlexMediaService.watched()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt), [`PlexMediaService.unwatched()`](../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexService.kt)
+**Implementation:** [`PlexMediaService.watched()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt), [`PlexMediaService.unwatched()`](../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexService.kt)
 
 ## 10. Media Streaming
 

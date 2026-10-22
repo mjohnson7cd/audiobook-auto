@@ -12,7 +12,7 @@ plugins {
 }
 
 android {
-    namespace = "io.github.mjohnson7cd.chronicleauto"
+    namespace = "io.github.mjohnson7cd.audiobook"
     compileSdk = 37
 
     lint {
@@ -23,13 +23,13 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.mjohnson7cd.chronicleauto"
+        applicationId = "io.github.mjohnson7cd.audiobook"
         minSdk = 30
         targetSdk = 36
         versionCode = 69
         versionName = "0.62.6"
 
-        testInstrumentationRunner = "io.github.mjohnson7cd.chronicleauto.application.ChronicleTestRunner"
+        testInstrumentationRunner = "io.github.mjohnson7cd.audiobook.application.ChronicleTestRunner"
     }
 
     signingConfigs {

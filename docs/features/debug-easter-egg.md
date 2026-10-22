@@ -68,21 +68,21 @@ graph TD
 
 **New Files:**
 
-- [`DebugInfoDialogFragment.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/DebugInfoDialogFragment.kt) - Dialog UI controller
-- [`DebugInfoViewModel.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/DebugInfoViewModel.kt) - Dialog state management
+- [`DebugInfoDialogFragment.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/settings/DebugInfoDialogFragment.kt) - Dialog UI controller
+- [`DebugInfoViewModel.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/settings/DebugInfoViewModel.kt) - Dialog state management
 - [`dialog_debug_info.xml`](../../app/src/main/res/layout/dialog_debug_info.xml) - Full-screen dialog layout
 - [`list_item_debug_connection.xml`](../../app/src/main/res/layout/list_item_debug_connection.xml) - Connection list item layout
 
 **Modified Files:**
 
-- [`PlexConfig.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexConfig.kt) - Added `getAvailableConnections()` method to expose connection set
-- [`SettingsViewModel.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/SettingsViewModel.kt) - Added tap counter logic and `showDebugDialog` LiveData event
-- [`SettingsFragment.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/SettingsFragment.kt) - Observes debug dialog event and shows the dialog
-- [`ActivityComponent.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/components/ActivityComponent.kt) - Added `inject(DebugInfoDialogFragment)` for dependency injection
+- [`PlexConfig.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexConfig.kt) - Added `getAvailableConnections()` method to expose connection set
+- [`SettingsViewModel.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/settings/SettingsViewModel.kt) - Added tap counter logic and `showDebugDialog` LiveData event
+- [`SettingsFragment.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/settings/SettingsFragment.kt) - Observes debug dialog event and shows the dialog
+- [`ActivityComponent.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/components/ActivityComponent.kt) - Added `inject(DebugInfoDialogFragment)` for dependency injection
 
 ### Tap Detection
 
-The version preference click handler in [`SettingsViewModel`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/SettingsViewModel.kt) tracks taps within a 15-second window:
+The version preference click handler in [`SettingsViewModel`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/settings/SettingsViewModel.kt) tracks taps within a 15-second window:
 
 ```mermaid
 stateDiagram-v2
@@ -114,7 +114,7 @@ All testing happens sequentially to avoid overloading the server or network.
 
 ### Dependency Injection
 
-[`DebugInfoDialogFragment`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/features/settings/DebugInfoDialogFragment.kt) uses Dagger 2 injection in `onAttach()`:
+[`DebugInfoDialogFragment`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/features/settings/DebugInfoDialogFragment.kt) uses Dagger 2 injection in `onAttach()`:
 
 ```kotlin
 override fun onAttach(context: Context) {

@@ -6,7 +6,7 @@
 
 ## Problem Statement
 
-Both [`PlaybackUrlResolver`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlaybackUrlResolver.kt) and [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) independently create "scoped" Retrofit instances (per-library, with library-specific base URL and auth token). Both contain a `createScopedService()` method that duplicates the same configuration but does it **incorrectly**.
+Both [`PlaybackUrlResolver`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlaybackUrlResolver.kt) and [`PlexProgressReporter`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt) independently create "scoped" Retrofit instances (per-library, with library-specific base URL and auth token). Both contain a `createScopedService()` method that duplicates the same configuration but does it **incorrectly**.
 
 ### The Bug
 
@@ -21,24 +21,24 @@ Instead of:
 ```
 
 This causes:
-1. `startMediaSession()` (POST `/playQueues`) fails because [`PlayQueueResponseWrapper`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/model/PlayQueueResponse.kt) can't be deserialized (Kotlin data classes require `KotlinJsonAdapterFactory`)
+1. `startMediaSession()` (POST `/playQueues`) fails because [`PlayQueueResponseWrapper`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/model/PlayQueueResponse.kt) can't be deserialized (Kotlin data classes require `KotlinJsonAdapterFactory`)
 2. No play queue is registered with Plex server → `playQueueItemCache` stays empty
 3. `GET /:/timeline` progress updates return HTTP 404 because Plex has no active session
-4. Playback still works because ExoPlayer uses direct file URLs via [`PlexHttpDataSourceFactory`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexHttpDataSourceFactory.kt) (no Moshi needed)
+4. Playback still works because ExoPlayer uses direct file URLs via [`PlexHttpDataSourceFactory`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexHttpDataSourceFactory.kt) (no Moshi needed)
 
 ### Additional Issues
 
 The two implementations also differ in header completeness:
 
 - **PlaybackUrlResolver**: Missing `X-Plex-Session-Identifier` and `X-Plex-Client-Name`, uses wrong `X-Plex-Client-Identifier` (uses `plexConfig.sessionIdentifier` instead of `plexPrefsRepo.uuid`)
-- **PlexProgressReporter**: Has correct headers matching [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt)
+- **PlexProgressReporter**: Has correct headers matching [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt)
 
 ## Proposed Solution
 
 Create a centralized `ScopedPlexServiceFactory` class that:
 
 1. **Centralizes scoped PlexMediaService creation** — single source of truth for per-library Retrofit instances
-2. **Takes properly configured Moshi from DI** — uses the `Moshi` instance with `KotlinJsonAdapterFactory` from [`AppModule`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/AppModule.kt)
+2. **Takes properly configured Moshi from DI** — uses the `Moshi` instance with `KotlinJsonAdapterFactory` from [`AppModule`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/modules/AppModule.kt)
 3. **Creates scoped OkHttpClient instances** — each with per-request auth token interceptor
 4. **Caches scoped services** — per `(serverUrl, authToken)` to avoid recreating Retrofit instances
 5. **Injectable via Dagger** — `@Singleton` scoped in `AppComponent`
@@ -48,11 +48,11 @@ Create a centralized `ScopedPlexServiceFactory` class that:
 ### Class Signature
 
 ```kotlin
-package io.github.mjohnson7cd.chronicleauto.data.sources.plex
+package io.github.mjohnson7cd.audiobook.data.sources.plex
 
 import com.squareup.moshi.Moshi
-import io.github.mjohnson7cd.chronicleauto.BuildConfig
-import io.github.mjohnson7cd.chronicleauto.data.model.ServerConnection
+import io.github.mjohnson7cd.audiobook.BuildConfig
+import io.github.mjohnson7cd.audiobook.data.model.ServerConnection
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -216,12 +216,12 @@ private fun createService(serverUrl: String, authToken: String): PlexMediaServic
 
 **Why not reuse `mediaOkHttpClient` from DI?**
 
-The existing `@Named(OKHTTP_CLIENT_MEDIA) mediaOkHttpClient` from [`AppModule`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/AppModule.kt:156-168) has:
+The existing `@Named(OKHTTP_CLIENT_MEDIA) mediaOkHttpClient` from [`AppModule`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/modules/AppModule.kt:156-168) has:
 ```kotlin
 .addInterceptor(plexConfig.plexMediaInterceptor)
 ```
 
-[`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt) uses `plexConfig.url` which is the **global active server URL** that changes when switching contexts. For scoped services, we need:
+[`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt) uses `plexConfig.url` which is the **global active server URL** that changes when switching contexts. For scoped services, we need:
 
 1. **Fixed base URL per instance** (from Retrofit's `baseUrl()`)
 2. **Fixed auth token per instance** (from scoped interceptor)
@@ -267,7 +267,7 @@ private fun createScopedInterceptor(authToken: String): Interceptor {
 
 **Header Alignment**:
 
-This matches [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt:49-80) exactly:
+This matches [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt:49-80) exactly:
 
 | Header | Value | Notes |
 |--------|-------|-------|
@@ -278,7 +278,7 @@ This matches [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/c
 
 **Why `plexPrefsRepo.uuid` not `plexConfig.sessionIdentifier`?**
 
-From [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt:57):
+From [`PlexInterceptor`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt:57):
 ```kotlin
 .header("X-Plex-Client-Identifier", plexPrefsRepo.uuid)
 ```
@@ -293,7 +293,7 @@ If these don't match, Plex won't associate timeline updates with the active play
 
 ### AppModule Changes
 
-Add provider method to [`AppModule`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/AppModule.kt):
+Add provider method to [`AppModule`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/modules/AppModule.kt):
 
 ```kotlin
 @Provides
@@ -449,7 +449,7 @@ Services are cached on first use per `(serverUrl, authToken)` combination. Subse
 
 | Scenario | Action | Trigger Point |
 |----------|--------|---------------|
-| User logs out | `clearCache()` | [`PlexConfig.clear()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexConfig.kt:338-343) |
+| User logs out | `clearCache()` | [`PlexConfig.clear()`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexConfig.kt:338-343) |
 | Account switched | `clearCache()` | Account switching logic in AccountManager |
 | Auth token refresh | `clearCache()` | Token refresh in PlexLoginRepo |
 | Server connections change | `clearCache()` | Server selection in login flow |
@@ -474,7 +474,7 @@ Services are cached on first use per `(serverUrl, authToken)` combination. Subse
 
 ### Unit Tests
 
-Create [`ScopedPlexServiceFactoryTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/ScopedPlexServiceFactoryTest.kt):
+Create [`ScopedPlexServiceFactoryTest.kt`](../../app/src/test/java/io/github/mjohnson7cd/audiobook/data/sources/plex/ScopedPlexServiceFactoryTest.kt):
 
 ```kotlin
 class ScopedPlexServiceFactoryTest {
@@ -561,19 +561,19 @@ Update existing tests:
 
 ## Migration Checklist
 
-- [ ] Create [`ScopedPlexServiceFactory.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/ScopedPlexServiceFactory.kt)
-- [ ] Add provider to [`AppModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/AppModule.kt)
-- [ ] Update [`PlaybackUrlResolver.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlaybackUrlResolver.kt)
+- [ ] Create [`ScopedPlexServiceFactory.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/ScopedPlexServiceFactory.kt)
+- [ ] Add provider to [`AppModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/modules/AppModule.kt)
+- [ ] Update [`PlaybackUrlResolver.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlaybackUrlResolver.kt)
   - [ ] Add `scopedPlexServiceFactory` dependency
   - [ ] Replace `createScopedService()` calls
   - [ ] Remove `createScopedService()` method
   - [ ] Remove `createScopedInterceptor()` method
-- [ ] Update [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt)
+- [ ] Update [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt)
   - [ ] Add `scopedPlexServiceFactory` dependency
   - [ ] Replace `createScopedService()` calls
   - [ ] Remove `createScopedService()` method
   - [ ] Remove `createScopedInterceptor()` method
-- [ ] Update [`PlexConfig.clear()`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexConfig.kt) to call `scopedPlexServiceFactory.clearCache()`
+- [ ] Update [`PlexConfig.clear()`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexConfig.kt) to call `scopedPlexServiceFactory.clearCache()`
 - [ ] Write unit tests for `ScopedPlexServiceFactory`
 - [ ] Update integration tests to verify bug fixes
 - [ ] Manual testing:
@@ -585,9 +585,9 @@ Update existing tests:
 
 ## References
 
-- [`PlaybackUrlResolver.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlaybackUrlResolver.kt) — Current duplicated implementation
-- [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexProgressReporter.kt) — Current duplicated implementation
-- [`PlexInterceptor.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/PlexInterceptor.kt) — Header reference
-- [`AppModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/injection/modules/AppModule.kt) — DI configuration
-- [`ServerConnectionResolver.kt`](../../app/src/main/java/io/github/mjohnson7cd/chronicleauto/data/sources/plex/ServerConnectionResolver.kt) — Resolves library connections
+- [`PlaybackUrlResolver.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlaybackUrlResolver.kt) — Current duplicated implementation
+- [`PlexProgressReporter.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexProgressReporter.kt) — Current duplicated implementation
+- [`PlexInterceptor.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/PlexInterceptor.kt) — Header reference
+- [`AppModule.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/injection/modules/AppModule.kt) — DI configuration
+- [`ServerConnectionResolver.kt`](../../app/src/main/java/io/github/mjohnson7cd/audiobook/data/sources/plex/ServerConnectionResolver.kt) — Resolves library connections
 - [`docs/architecture/plex-dashboard-activity.md`](plex-dashboard-activity.md) — Play queue requirement context
