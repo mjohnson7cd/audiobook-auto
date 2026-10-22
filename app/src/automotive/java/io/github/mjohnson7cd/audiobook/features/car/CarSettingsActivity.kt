@@ -46,6 +46,10 @@ class CarSettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_car_settings)
+        
+        // Add back button support
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        
         accountStatus = findViewById(R.id.car_settings_account_status)
         libraryStatus = findViewById(R.id.car_settings_library_status)
         signIn = findViewById(R.id.car_settings_sign_in)
@@ -82,6 +86,21 @@ class CarSettingsActivity : AppCompatActivity() {
             prefsRepo.playbackSpeed = nextOf(SPEED_OPTIONS, prefsRepo.playbackSpeed)
             renderPlayback()
         }
+    }
+    
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                finish()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+    
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 
     override fun onResume() {
