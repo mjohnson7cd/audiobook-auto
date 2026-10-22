@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Design-time (tools:src) placeholder book cover. Original work, CC0 1.0. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <path
+        android:fillColor="#37474F"
+        android:pathData="M0,0h200v200h-200z" />
+    <path
+        android:fillColor="#90A4AE"
+        android:pathData="M40,60h120v12h-120zM40,90h90v8h-90zM40,110h70v8h-70z" />
+</vector>

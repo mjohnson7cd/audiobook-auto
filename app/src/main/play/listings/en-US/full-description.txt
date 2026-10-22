@@ -24,6 +24,6 @@ Chronicle is designed specifically for Plex users who want a dedicated audiobook
 <b>🔗 Useful Resources</b>
 
 • Plex Audiobook Guide: https://github.com/seanap/Plex-Audiobook-Guide
-• Chronicle Community: https://www.reddit.com/r/ChronicleEpilogueApp/
+• Issues: https://github.com/mjohnson7cd/audiobook-auto/issues
 
 Chronicle is open source and continuously improving. Experience the best way to enjoy your Plex audiobooks on Android!

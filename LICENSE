@@ -674,28 +674,13 @@ Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
 
 ================================================================================
-                              ASSET EXCLUSIONS
+                              BRANDING ASSETS
 ================================================================================
 
-The Chronicle logo, app icons, promotional graphics, and other branding assets
-contained in the following directories and files are expressly excluded from
-the GNU General Public License v3.0 and are instead subject to the terms in
-ASSETS-LICENSE at the root of this repository:
-
-Excluded directories:
-- images/logo/
-- images/screenshots/
-- app/src/main/play/listings/en-US/graphics/
-- pages/assets/images/
-- app/src/main/res/mipmap-*/
-- app/src/main/res/mipmap-anydpi-v26/
-
-Excluded files:
-- app/src/main/play_store_512.png
-- app/src/main/res/drawable-v24/ic_launcher_foreground.xml
-- app/src/main/res/drawable-v24/example_cover.png
-- images/store_frame_template.svg
+The upstream Chronicle branding assets (All Rights Reserved) have been removed
+from this fork. The placeholder icons and store graphics now in this
+repository are dedicated to the public domain under CC0 1.0; see
+ASSETS-LICENSE at the root of this repository for the list of files.
 
 All other files in this repository, unless otherwise noted, are licensed
 under the GNU General Public License v3.0.
-
