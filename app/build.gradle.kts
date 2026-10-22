@@ -34,27 +34,27 @@ android {
 
     signingConfigs {
         create("release") {
-            // For GitHub Actions: use environment variables
-            // For local builds: use keystore.properties file
+            // CI: KEYSTORE_FILE / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD env vars.
+            // Local: keystore.properties in the project root (see keystore.properties.example).
+            // Relative storeFile paths in keystore.properties resolve against the project root.
             val keystorePropertiesFile = rootProject.file("keystore.properties")
 
             if (System.getenv("KEYSTORE_FILE") != null) {
-                // GitHub Actions signing configuration
+                // Relative to app/ (CI workflows decode the keystore into app/)
                 storeFile = file(System.getenv("KEYSTORE_FILE"))
                 storePassword = System.getenv("KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("KEY_PASSWORD")
             } else if (keystorePropertiesFile.exists()) {
-                // Local signing configuration from keystore.properties
                 val keystoreProperties = Properties()
-                keystoreProperties.load(keystorePropertiesFile.inputStream())
+                keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 
-                storeFile = file(keystoreProperties["storeFile"].toString())
-                storePassword = keystoreProperties["storePassword"].toString()
-                keyAlias = keystoreProperties["keyAlias"].toString()
-                keyPassword = keystoreProperties["keyPassword"].toString()
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
             }
-            // If neither exists, release builds will use debug signing
+            // If neither exists, release builds are left unsigned (a warning is logged below).
         }
     }
 
@@ -67,10 +67,16 @@ android {
                 "proguard-rules.pro",
             )
 
-            // Use release signing config if available
-            val releaseSigningConfig = signingConfigs.findByName("release")
-            if (releaseSigningConfig?.storeFile != null) {
+            // Use release signing config if a keystore is configured and present
+            val releaseSigningConfig = signingConfigs.getByName("release")
+            val releaseStoreFile = releaseSigningConfig.storeFile
+            if (releaseStoreFile != null && releaseStoreFile.exists()) {
                 signingConfig = releaseSigningConfig
+            } else {
+                logger.warn(
+                    "Release keystore not configured or missing (${releaseStoreFile ?: "no keystore.properties / KEYSTORE_FILE"}); " +
+                        "release build will be unsigned.",
+                )
             }
         }
     }
