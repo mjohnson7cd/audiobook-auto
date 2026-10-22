@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import io.github.mjohnson7cd.audiobook.BuildConfig
 import io.github.mjohnson7cd.audiobook.application.Injector
 import io.github.mjohnson7cd.audiobook.data.model.Library
 import io.github.mjohnson7cd.audiobook.data.model.PlexLibrary
@@ -84,6 +85,12 @@ class LibrarySyncRepository
                     }
 
                     collectionsRepository.refreshCollectionsPaginated()
+
+                    // Download cover art for AAOS (car can't load authenticated Plex URLs)
+                    if (BuildConfig.IS_AUTOMOTIVE) {
+                        Timber.i("Downloading cover art for AAOS...")
+                        downloadCoverArt()
+                    }
 
                     // Update library item counts after syncing books
                     Timber.d("Updating library item counts")
@@ -380,5 +387,47 @@ class LibrarySyncRepository
                 )
             }
             Timber.d("Track data update complete")
+        }
+        
+        /**
+         * Downloads cover art for all books to local cache (AAOS only).
+         * AAOS media center can't load authenticated Plex URLs, so we cache covers locally.
+         */
+        private suspend fun downloadCoverArt() {
+            val context = Injector.get().applicationContext()
+            val books = bookRepository.getAllBooksAsync()
+            var downloaded = 0
+            var skipped = 0
+            var failed = 0
+            
+            Timber.i("Downloading covers for ${books.size} books...")
+            
+            books.forEach { book ->
+                if (book.thumb.isNotEmpty()) {
+                    val success = io.github.mjohnson7cd.audiobook.features.car.CoverArtCache.downloadAndCache(
+                        context = context,
+                        bookId = book.id,
+                        thumbPath = book.thumb,
+                        plexConfig = plexConfig
+                    )
+                    
+                    if (success) {
+                        // Check if it was newly downloaded or already cached
+                        val cacheFile = java.io.File(
+                            io.github.mjohnson7cd.audiobook.features.car.CoverArtCache.getCacheDir(context),
+                            "${book.id}.jpg"
+                        )
+                        if (cacheFile.lastModified() > System.currentTimeMillis() - 5000) {
+                            downloaded++
+                        } else {
+                            skipped++
+                        }
+                    } else {
+                        failed++
+                    }
+                }
+            }
+            
+            Timber.i("Cover art download complete: $downloaded new, $skipped cached, $failed failed")
         }
     }

@@ -9,6 +9,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
+import io.github.mjohnson7cd.audiobook.BuildConfig
 import io.github.mjohnson7cd.audiobook.data.sources.MediaSource
 import io.github.mjohnson7cd.audiobook.data.sources.MediaSource.Companion.NO_SOURCE_FOUND
 import io.github.mjohnson7cd.audiobook.data.sources.SourceManager
@@ -167,12 +168,24 @@ fun Audiobook.toAlbumMediaMetadata(): MediaMetadataCompat {
  * [androidx.media.MediaBrowserServiceCompat.onSearch] and
  * [androidx.media.MediaBrowserServiceCompat.onLoadChildren], and respective clients
  */
-fun Audiobook.toMediaItem(plexConfig: PlexConfig): MediaBrowserCompat.MediaItem {
+fun Audiobook.toMediaItem(plexConfig: PlexConfig, context: android.content.Context? = null): MediaBrowserCompat.MediaItem {
     val mediaDescription = MediaDescriptionCompat.Builder()
     mediaDescription.setTitle(title)
     mediaDescription.setMediaId(id)
     mediaDescription.setSubtitle(author)
-    mediaDescription.setIconUri(plexConfig.makeThumbUri(this.thumb))
+    
+    // On AAOS, try cached local cover first (car can't load authenticated Plex URLs)
+    if (BuildConfig.IS_AUTOMOTIVE && context != null) {
+        val cachedUri = io.github.mjohnson7cd.audiobook.features.car.CoverArtCache.getCachedCoverUri(context, id)
+        if (cachedUri != null) {
+            mediaDescription.setIconUri(cachedUri)
+        }
+        // else: no cover (car can't load Plex URL even if we set it)
+    } else {
+        // Mobile/Android Auto: use Plex thumb URL (works with auth)
+        mediaDescription.setIconUri(plexConfig.makeThumbUri(this.thumb))
+    }
+    
     val extras = Bundle()
     extras.putBoolean(EXTRA_IS_DOWNLOADED, isCached)
     extras.putInt(

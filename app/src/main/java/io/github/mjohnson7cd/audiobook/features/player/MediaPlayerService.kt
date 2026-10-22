@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.MediaMetadataCompat
+import io.github.mjohnson7cd.audiobook.features.car.CoverArtCache
 import android.support.v4.media.session.MediaControllerCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -327,6 +328,11 @@ class MediaPlayerService :
                 )
                 // Trigger MediaSession update when controller state changes
                 updateSessionPlaybackState()
+                // Book/chapter info often arrives after the player's media item transition, so
+                // refresh metadata when it changes (otherwise the cluster never sees the title).
+                if (metadataKey(state) != lastPublishedMetadataKey) {
+                    currentPlayer?.let { updateSessionMetadataFromPlayer(it) }
+                }
             }
         }
 
@@ -714,45 +720,88 @@ class MediaPlayerService :
             player.currentMediaItem?.localConfiguration?.tag as? MediaDescriptionCompat
                 ?: extractDescriptionFromTimeline(player)
 
-        if (description != null) {
-            // Read from synchronous state source to avoid race condition with async updates
-            // This ensures metadata is always up-to-date, even during multi-library playback
-            val state = playbackStateController.state.value
-            val chapter = state.currentChapter ?: EMPTY_CHAPTER
-            val book = state.audiobook ?: EMPTY_AUDIOBOOK
-            val track = state.currentTrack ?: MediaItemTrack.EMPTY_TRACK
+        // Read from synchronous state source to avoid race condition with async updates
+        // This ensures metadata is always up-to-date, even during multi-library playback
+        val state = playbackStateController.state.value
+        val chapter = state.currentChapter ?: EMPTY_CHAPTER
+        val book = state.audiobook ?: EMPTY_AUDIOBOOK
+        val hasBook = book != EMPTY_AUDIOBOOK && book.title.isNotBlank()
 
-            // Build metadata with chapter-scoped information
-            val metadata =
-                if (chapter != EMPTY_CHAPTER) {
-                    // Chapter exists: use chapter title and duration
-                    val metadataBuilder =
-                        MediaMetadataCompat.Builder()
-                            .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, description.mediaId)
-                            .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, "${chapter.title} - ${book.title}")
-                            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, chapter.title)
-                            .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, book.title)
-                            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, book.author)
-                            .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, book.title)
-                            .putLong(
-                                MediaMetadataCompat.METADATA_KEY_DURATION,
-                                chapter.endTimeOffset - chapter.startTimeOffset,
-                            )
+        if (description == null && !hasBook) {
+            return
+        }
 
-                    // Copy album art if available
-                    description.iconUri?.toString()?.let {
-                        metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, it)
-                        metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, it)
+        val metadata =
+            if (hasBook) {
+                // Always publish full book metadata (TITLE/ARTIST/ALBUM/art) once the book is known.
+                // AAOS media center and the instrument cluster read these standard keys; without
+                // them the cluster falls back to its placeholder text.
+                val hasChapter = chapter != EMPTY_CHAPTER
+                val title = if (hasChapter && chapter.title.isNotBlank()) chapter.title else book.title
+                val duration =
+                    if (hasChapter) {
+                        chapter.endTimeOffset - chapter.startTimeOffset
+                    } else {
+                        description?.extras?.getLong(MediaMetadataCompat.METADATA_KEY_DURATION, 0L)
+                            ?.takeIf { it > 0 }
+                            ?: player.duration.takeIf { it > 0 }
+                            ?: 0L
                     }
 
-                    metadataBuilder.build()
-                } else {
-                    // No chapter data: fallback to standard track-based metadata
-                    description.toMediaMetadataCompat()
+                val metadataBuilder =
+                    MediaMetadataCompat.Builder()
+                        .putString(
+                            MediaMetadataCompat.METADATA_KEY_MEDIA_ID,
+                            description?.mediaId ?: book.id.toString(),
+                        )
+                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
+                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, title)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, book.author)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, book.author)
+                        .putString(MediaMetadataCompat.METADATA_KEY_AUTHOR, book.author)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, book.title)
+                        .putString(
+                            MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE,
+                            if (hasChapter) book.title else book.author,
+                        )
+                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_DESCRIPTION, book.author)
+                        .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
+
+                // Art URI (works for in-process consumers / content-resolvable URIs)
+                description?.iconUri?.toString()?.let {
+                    metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, it)
+                    metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, it)
+                }
+                // Bitmap art: the cluster/media center can't load authenticated Plex URLs or our
+                // private file:// URIs, so ship the locally cached cover as a bitmap.
+                CoverArtCache.loadCachedBitmap(applicationContext, book.id.toString())?.let {
+                    metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, it)
+                    metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, it)
                 }
 
-            mediaSession.setMetadata(metadata)
-        }
+                metadataBuilder.build()
+            } else {
+                // Book not loaded yet: fallback to standard track-based metadata
+                val base = description!!.toMediaMetadataCompat()
+                MediaMetadataCompat.Builder(base).apply {
+                    description.subtitle?.toString()?.let {
+                        putString(MediaMetadataCompat.METADATA_KEY_ARTIST, it)
+                    }
+                }.build()
+            }
+
+        lastPublishedMetadataKey = metadataKey(state)
+        mediaSession.setMetadata(metadata)
+    }
+
+    /** Identity of what the published metadata describes; used to avoid redundant updates. */
+    private var lastPublishedMetadataKey: String? = null
+
+    private fun metadataKey(state: PlaybackState): String {
+        val book = state.audiobook
+        val chapter = state.currentChapter
+        return "${book?.id}|${book?.title}|${book?.author}|${state.currentTrackIndex}|" +
+            "${chapter?.title}|${chapter?.startTimeOffset}"
     }
 
     private fun extractDescriptionFromTimeline(player: Player): MediaDescriptionCompat? {
@@ -1030,7 +1079,7 @@ class MediaPlayerService :
                             val items =
                                 recentlyListened
                                     .filterNotNull()
-                                    .map { it.toMediaItem(plexConfig) }
+                                    .map { it.toMediaItem(plexConfig, applicationContext) }
                                     .toMutableList()
                             Timber.d("[AndroidAuto] Loaded ${items.size} recently listened items")
                             result.sendResult(items)
@@ -1041,7 +1090,7 @@ class MediaPlayerService :
                             val items =
                                 recentlyAdded
                                     .filterNotNull()
-                                    .map { it.toMediaItem(plexConfig) }
+                                    .map { it.toMediaItem(plexConfig, applicationContext) }
                                     .toMutableList()
                             Timber.d("[AndroidAuto] Loaded ${items.size} recently added items")
                             result.sendResult(items)
@@ -1052,7 +1101,7 @@ class MediaPlayerService :
                             val items =
                                 books
                                     .filterNotNull()
-                                    .map { it.toMediaItem(plexConfig) }
+                                    .map { it.toMediaItem(plexConfig, applicationContext) }
                                     .toMutableList()
                             Timber.d("[AndroidAuto] Loaded ${items.size} library items")
                             result.sendResult(items)
@@ -1063,7 +1112,7 @@ class MediaPlayerService :
                             val items =
                                 offline
                                     .filterNotNull()
-                                    .map { it.toMediaItem(plexConfig) }
+                                    .map { it.toMediaItem(plexConfig, applicationContext) }
                                     .toMutableList()
                             Timber.d("[AndroidAuto] Loaded ${items.size} offline items")
                             result.sendResult(items)
@@ -1108,7 +1157,7 @@ class MediaPlayerService :
                     val items =
                         books
                             .filterNotNull()
-                            .map { it.toMediaItem(plexConfig) }
+                            .map { it.toMediaItem(plexConfig, applicationContext) }
                             .toMutableList()
                     Timber.d("[AndroidAuto] Search found ${items.size} results for: $query")
                     result.sendResult(items)
