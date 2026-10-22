@@ -22,9 +22,9 @@ fun makeBrowsable(
     val mediaDescription = MediaDescriptionCompat.Builder()
     mediaDescription.setTitle(title)
     mediaDescription.setSubtitle(desc)
-    mediaDescription.setIconUri(
-        Uri.parse("android.resource://${BuildConfig.APPLICATION_ID}/$iconRes"),
-    )
+    // NOTE: Do NOT set iconUri for browsable categories. The android.resource:// URI scheme
+    // fails on AAOS because the car media center can't resolve resources from our package.
+    // The car UI provides default folder icons automatically.
     mediaDescription.setMediaId(title)
     val extras = Bundle()
     extras.putBoolean(CONTENT_STYLE_SUPPORTED, true)
@@ -40,7 +40,7 @@ fun makeBrowsable(
  *
  * @param title The main message to display
  * @param subtitle Optional subtitle/additional context (shown below title)
- * @param iconRes Icon resource to display
+ * @param iconRes Icon resource to display (unused on AAOS; kept for API compatibility)
  * @param mediaId Unique identifier for this message item (must start with "__error" or "__message")
  */
 fun makeMessageItem(
@@ -57,9 +57,7 @@ fun makeMessageItem(
         MediaDescriptionCompat.Builder()
             .setTitle(title)
             .setSubtitle(subtitle)
-            .setIconUri(
-                Uri.parse("android.resource://${BuildConfig.APPLICATION_ID}/$iconRes"),
-            )
+            // NOTE: iconUri removed for same reason as makeBrowsable (android.resource:// fails on AAOS)
             .setMediaId(mediaId)
             .setExtras(extras)
             .build()
