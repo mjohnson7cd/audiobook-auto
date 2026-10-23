@@ -138,6 +138,9 @@ class MediaPlayerService :
     lateinit var librarySyncRepository: LibrarySyncRepository
 
     companion object {
+        /** Republish the playback state only when the position drifts this far from the controllers' extrapolation. */
+        const val POSITION_DRIFT_TOLERANCE_MS = 1500L
+
         /** Strings used by plex to indicate playback state */
         const val PLEX_STATE_PLAYING = "playing"
         const val PLEX_STATE_STOPPED = "stopped"
@@ -307,6 +310,7 @@ class MediaPlayerService :
 
         serviceScope.launch(Injector.get().unhandledExceptionHandler()) { mediaSource.load() }
 
+        lastPublishedPlaybackState = null
         mediaSession.setPlaybackState(PlaybackStateCompat.Builder().build())
         mediaSession.setCallback(mediaSessionCallback)
 
@@ -425,6 +429,7 @@ class MediaPlayerService :
                 .apply { signInResolutionIfNeeded()?.let { setExtras(it) } }
                 .build()
 
+        lastPublishedPlaybackState = null
         mediaSession.setPlaybackState(errorState)
     }
 
@@ -476,8 +481,12 @@ class MediaPlayerService :
     private val prefsListener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when (key) {
-                PrefsRepo.KEY_SKIP_SILENCE, PrefsRepo.KEY_PLAYBACK_SPEED -> {
+                PrefsRepo.KEY_SKIP_SILENCE -> {
                     invalidatePlaybackParams()
+                }
+                PrefsRepo.KEY_PLAYBACK_SPEED -> {
+                    invalidatePlaybackParams()
+                    updateCustomActions()
                 }
                 PrefsRepo.KEY_PAUSE_ON_FOCUS_LOST -> {
                     updateAudioAttrs(exoPlayer)
@@ -514,6 +523,7 @@ class MediaPlayerService :
                 if (loginState == LOGGED_IN_FULLY && isErrorState) {
                     Timber.d("[AndroidAuto] Login successful - clearing error state")
                     // Set playback state to STOPPED to clear any displayed error messages
+                    lastPublishedPlaybackState = null
                     mediaSession.setPlaybackState(
                         PlaybackStateCompat.Builder()
                             .setState(
@@ -610,7 +620,30 @@ class MediaPlayerService :
             } else {
                 buildEmptyPlaybackState()
             }
+        // Car media rebuilds its control bar on every state push, which collapses the ⋮ overflow row;
+        // the ~1Hz progress ticks carry nothing controllers can't extrapolate, so skip those.
+        if (isEquivalent(lastPublishedPlaybackState, playbackState)) return
+        lastPublishedPlaybackState = playbackState
         mediaSession.setPlaybackState(playbackState)
+    }
+
+    private var lastPublishedPlaybackState: PlaybackStateCompat? = null
+
+    private fun isEquivalent(
+        old: PlaybackStateCompat?,
+        new: PlaybackStateCompat,
+    ): Boolean {
+        if (old == null) return false
+        if (old.state != new.state || old.actions != new.actions || old.playbackSpeed != new.playbackSpeed ||
+            old.errorMessage != new.errorMessage || old.activeQueueItemId != new.activeQueueItemId
+        ) {
+            return false
+        }
+        val actions = { s: PlaybackStateCompat -> s.customActions.map { Triple(it.action, it.name, it.icon) } }
+        if (actions(old) != actions(new)) return false
+        val elapsed = new.lastPositionUpdateTime - old.lastPositionUpdateTime
+        val expected = old.position + if (old.state == PlaybackStateCompat.STATE_PLAYING) (elapsed * old.playbackSpeed).toLong() else 0L
+        return kotlin.math.abs(new.position - expected) < POSITION_DRIFT_TOLERANCE_MS
     }
 
     private fun buildPlaybackState(player: Player): PlaybackStateCompat {
@@ -679,8 +712,6 @@ class MediaPlayerService :
             PlaybackStateCompat.ACTION_PAUSE or
             PlaybackStateCompat.ACTION_STOP or
             PlaybackStateCompat.ACTION_SEEK_TO or
-            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
             PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
             PlaybackStateCompat.ACTION_PREPARE or
             PlaybackStateCompat.ACTION_PREPARE_FROM_MEDIA_ID or
@@ -768,7 +799,14 @@ class MediaPlayerService :
                         .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
 
                 // Art URI (works for in-process consumers / content-resolvable URIs)
-                description?.iconUri?.toString()?.let {
+                // Car media prefers the URI over the bitmap, so on AAOS it must be our content:// cover.
+                val artUri =
+                    if (BuildConfig.IS_AUTOMOTIVE) {
+                        CoverArtCache.getCachedCoverUri(applicationContext, book.id.toString())
+                    } else {
+                        description?.iconUri
+                    }
+                artUri?.toString()?.let {
                     metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON_URI, it)
                     metadataBuilder.putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, it)
                 }
@@ -815,6 +853,8 @@ class MediaPlayerService :
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
+        // Failsafe: pause before teardown so audio never keeps going while we clean up.
+        currentPlayer?.pause()
 
         // Ensures that players will not block being removed as a foreground service
         exoPlayer.stop()
@@ -823,6 +863,8 @@ class MediaPlayerService :
 
     override fun onDestroy() {
         Timber.i("Service destroyed")
+        // Failsafe: pause first so playback stops (and the final position is stable) before cleanup.
+        currentPlayer?.pause()
 
         // Release TTS resources
         voiceCommandBridgeAudio.release()

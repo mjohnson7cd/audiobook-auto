@@ -19,7 +19,7 @@ import java.net.URL
  */
 object CoverArtCache {
     private const val TAG = "CoverArtCache"
-    private const val MAX_SIZE_PX = 512  // Downscale to 512x512 max
+    private const val MAX_SIZE_PX = 1024  // Downscale to 1024x1024 max for AAOS displays
     
     fun getCacheDir(context: Context): File {
         return File(context.cacheDir, "cover_art").apply {
@@ -28,14 +28,14 @@ object CoverArtCache {
     }
     
     /**
-     * Returns local file URI for cached cover, or null if not cached.
-     * Format: file:///data/.../cache/cover_art/{bookId}.jpg
+     * Returns a content:// URI (served by [CoverArtProvider]) for the cached cover, or null.
+     * Not file://: the car media center runs in another process and can't open our private files.
      */
     fun getCachedCoverUri(context: Context, bookId: String): android.net.Uri? {
         val safeId = bookId.replace(":", "_")
         val file = File(getCacheDir(context), "$safeId.jpg")
         return if (file.exists()) {
-            android.net.Uri.fromFile(file)
+            android.net.Uri.parse("content://${context.packageName}.coverart/${file.name}")
         } else {
             null
         }
@@ -53,7 +53,7 @@ object CoverArtCache {
     fun loadCachedBitmap(context: Context, bookId: String, maxPx: Int = 320): Bitmap? {
         if (bookId.isBlank()) return null
         if (lastBitmapKey == bookId) lastBitmap?.let { if (!it.isRecycled) return it }
-        val file = File(getCacheDir(context), "$bookId.jpg")
+        val file = File(getCacheDir(context), "${bookId.replace(":", "_")}.jpg")
         if (!file.exists()) return null
         return try {
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -107,9 +107,9 @@ object CoverArtCache {
                 return@withContext false
             }
             
-            // Decode and downscale
             val options = BitmapFactory.Options().apply {
                 inJustDecodeBounds = true
+                inPreferredConfig = Bitmap.Config.ARGB_8888  // Higher quality color
             }
             connection.inputStream.use {
                 BitmapFactory.decodeStream(it, null, options)
@@ -134,9 +134,9 @@ object CoverArtCache {
                 return@withContext false
             }
             
-            // Save to cache
+            // Save to cache with higher quality
             FileOutputStream(cacheFile).use {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it)
             }
             bitmap.recycle()
             

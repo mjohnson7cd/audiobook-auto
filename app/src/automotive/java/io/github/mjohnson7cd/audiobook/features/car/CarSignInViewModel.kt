@@ -13,6 +13,7 @@ import io.github.mjohnson7cd.audiobook.data.model.ServerModel
 import io.github.mjohnson7cd.audiobook.data.model.asServer
 import io.github.mjohnson7cd.audiobook.data.sources.plex.IPlexLoginRepo
 import io.github.mjohnson7cd.audiobook.data.sources.plex.IPlexLoginRepo.LoginState
+import io.github.mjohnson7cd.audiobook.data.sources.plex.PlexPrefsRepo
 import io.github.mjohnson7cd.audiobook.data.sources.plex.PlexConfig
 import io.github.mjohnson7cd.audiobook.data.sources.plex.PlexLoginService
 import io.github.mjohnson7cd.audiobook.data.sources.plex.PlexMediaService
@@ -42,8 +43,15 @@ class CarSignInViewModel(
     private val plexMediaService: PlexMediaService,
     private val plexConfig: PlexConfig,
     private val librarySyncRepository: LibrarySyncRepository,
+    private val plexPrefs: PlexPrefsRepo,
+    switchServer: Boolean = false,
 ) : ViewModel() {
-    class Factory : ViewModelProvider.Factory {
+    /**
+     * @param switchServer true when opened from "Switch server / library" in car settings: the
+     * current server/library stay saved until a new library is actually chosen, and are restored
+     * if the user cancels or backs out.
+     */
+    class Factory(private val switchServer: Boolean = false) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             val component = Injector.get()
@@ -53,6 +61,8 @@ class CarSignInViewModel(
                 component.plexMediaService(),
                 component.plexConfig(),
                 component.librarySyncRepo(),
+                component.plexPrefs(),
+                switchServer,
             ) as T
         }
     }
@@ -74,7 +84,12 @@ class CarSignInViewModel(
 
         object CodeExpired : UiState()
 
-        data class Error(val message: Message, val detail: String? = null) : UiState()
+        /** [canChooseServer]: offer "Choose another server" (failure was server-specific). */
+        data class Error(
+            val message: Message,
+            val detail: String? = null,
+            val canChooseServer: Boolean = false,
+        ) : UiState()
     }
 
     /** Resource-free message keys; the activity maps them to strings. */
@@ -99,6 +114,16 @@ class CarSignInViewModel(
     private var lastRoutedLoginState: LoginState? = null
     private var awaitingLibraries = false
 
+    /** True only while the link code is being shown/polled; gates auth-flow UI updates. */
+    private var codeFlowActive = false
+
+    /** Server/library that were active before a switch; restored if the switch is abandoned. */
+    private data class Snapshot(val server: ServerModel, val library: PlexLibrary)
+
+    private var switchSnapshot: Snapshot? = null
+    private var finished = false
+    private var libraryChosen = false
+
     private val loginObserver =
         Observer<Event<LoginState>> { event -> route(event.peekContent()) }
 
@@ -109,29 +134,48 @@ class CarSignInViewModel(
                 PlexConfig.ConnectionState.CONNECTED -> loadLibraries()
                 PlexConfig.ConnectionState.CONNECTION_FAILED -> {
                     awaitingLibraries = false
-                    _state.postValue(UiState.Error(Message.NETWORK, connectingServerName))
+                    _state.postValue(UiState.Error(Message.NETWORK, connectingServerName, canChooseServer = true))
                 }
                 else -> Unit
             }
         }
 
     init {
+        val server = plexPrefs.server
+        val library = plexPrefs.library
+        val switching = switchServer && plexPrefs.accountAuthToken.isNotEmpty() && plexPrefs.user != null
+        if (switching) {
+            // Don't touch saved prefs yet: just show the server list. Mark the current (sticky)
+            // login event as already routed *before* observing so it doesn't trigger a connect.
+            if (server != null && library != null) switchSnapshot = Snapshot(server, library)
+            lastRoutedLoginState = plexLoginRepo.loginEvent.value?.peekContent()
+        }
         plexLoginRepo.loginEvent.observeForever(loginObserver)
         plexConfig.connectionState.observeForever(connectionObserver)
-        plexLoginRepo.determineLoginState()
+        if (switching) loadServers() else plexLoginRepo.determineLoginState()
     }
 
     private fun route(loginState: LoginState) {
         if (loginState == lastRoutedLoginState) return
         Timber.i("[CarSignIn] login state -> $loginState")
+        if (loginState != LoginState.NOT_LOGGED_IN && loginState != LoginState.AWAITING_LOGIN_RESULTS) {
+            // Linked: the polling loop must not emit again, or its Polling state would
+            // re-post ShowCode over the user/server picker (stuck-on-code-screen bug).
+            stopCodeFlow()
+        }
         when (loginState) {
             LoginState.NOT_LOGGED_IN -> startCodeFlow()
             LoginState.AWAITING_LOGIN_RESULTS -> return // transient: keep current UI, don't latch
             LoginState.FAILED_TO_LOG_IN -> _state.postValue(UiState.Error(Message.NETWORK))
+            LoginState.LOGGED_IN_FULLY ->
+                if (switchSnapshot != null && !libraryChosen) {
+                    return // stale/sticky event mid-switch; wait for the new library
+                } else {
+                    finishSignIn()
+                }
             LoginState.LOGGED_IN_NO_USER_CHOSEN -> loadUsers()
             LoginState.LOGGED_IN_NO_SERVER_CHOSEN -> loadServers()
             LoginState.LOGGED_IN_NO_LIBRARY_CHOSEN -> connectForLibraries()
-            LoginState.LOGGED_IN_FULLY -> finishSignIn()
         }
         lastRoutedLoginState = loginState
     }
@@ -143,14 +187,34 @@ class CarSignInViewModel(
         plexLoginRepo.determineLoginState()
     }
 
+    /**
+     * Abandon the current server (e.g. unreachable) and pick another one. Keeps the Plex
+     * account and user; only the half-chosen server/library are dropped.
+     */
+    fun chooseDifferentServer() {
+        awaitingLibraries = false
+        lastRoutedLoginState = null
+        // Prefs are left alone until a new server is actually picked (chooseServer), so
+        // cancelling from the list loses nothing.
+        loadServers()
+    }
+
     fun requestNewCode() {
         lastRoutedLoginState = null
         startCodeFlow()
     }
 
+    private fun stopCodeFlow() {
+        codeFlowActive = false
+        authJob?.cancel()
+        authJob = null
+        authCoordinator?.dispose()
+    }
+
     private fun startCodeFlow() {
         authJob?.cancel()
         authCoordinator?.dispose()
+        codeFlowActive = true
         _state.postValue(UiState.Loading(Message.REQUESTING_CODE))
         val coordinator =
             PlexAuthCoordinator(
@@ -163,6 +227,7 @@ class CarSignInViewModel(
         authJob =
             viewModelScope.launch {
                 coordinator.startAuth().collect { authState ->
+                    if (!codeFlowActive) return@collect
                     when (authState) {
                         is PlexAuthState.WaitingForUser -> _state.postValue(UiState.ShowCode(authState.pinCode))
                         is PlexAuthState.Polling ->
@@ -238,7 +303,12 @@ class CarSignInViewModel(
                         .map { it.asServer() }
                 when (servers.size) {
                     0 -> _state.postValue(UiState.Error(Message.NO_SERVERS))
-                    1 -> chooseServer(servers.first())
+                    // Switching with one server: still show it so the user sees what's happening.
+                    1 -> if (switchSnapshot != null) {
+                        _state.postValue(UiState.ChooseServer(servers))
+                    } else {
+                        chooseServer(servers.first())
+                    }
                     else -> _state.postValue(UiState.ChooseServer(servers))
                 }
             } catch (t: Throwable) {
@@ -250,12 +320,16 @@ class CarSignInViewModel(
 
     fun chooseServer(server: ServerModel) {
         connectingServerName = server.name
+        // Re-picking may post the same NO_LIBRARY_CHOSEN state as before; don't dedupe it away.
+        lastRoutedLoginState = null
+        // A new server invalidates the old library (chooseServer() only replaces the server).
+        plexPrefs.library = null
         plexLoginRepo.chooseServer(server)
     }
 
     @OptIn(InternalCoroutinesApi::class) // PlexConfig.connectToServerWithRetryAndState, as in ChooseLibraryViewModel
     private fun connectForLibraries() {
-        connectingServerName = Injector.get().plexPrefs().server?.name.orEmpty()
+        connectingServerName = plexPrefs.server?.name.orEmpty()
         _state.postValue(UiState.Loading(Message.CONNECTING))
         awaitingLibraries = true
         // Retry-enabled connect: the car is almost never on the server's LAN, so WAN/relay
@@ -274,34 +348,56 @@ class CarSignInViewModel(
                         .filter { it.type == ARTIST.typeString }
                         .map { it.asLibrary() }
                 when (libraries.size) {
-                    0 -> _state.postValue(UiState.Error(Message.NO_LIBRARIES))
+                    0 -> _state.postValue(UiState.Error(Message.NO_LIBRARIES, canChooseServer = true))
                     1 -> chooseLibrary(libraries.first())
                     else -> _state.postValue(UiState.ChooseLibrary(libraries))
                 }
             } catch (t: Throwable) {
                 Timber.e(t, "[CarSignIn] failed to load libraries")
-                _state.postValue(UiState.Error(Message.NETWORK, t.message))
+                _state.postValue(UiState.Error(Message.NETWORK, t.message, canChooseServer = true))
             }
         }
     }
 
     fun chooseLibrary(library: PlexLibrary) {
         _state.postValue(UiState.Loading(Message.LOADING))
+        libraryChosen = true
         plexLoginRepo.chooseLibrary(library)
     }
 
     private fun finishSignIn() {
+        finished = true
+        switchSnapshot = null
         authCoordinator?.dispose()
         // There is no home screen in the car to kick off the first sync, so do it here.
         librarySyncRepository.refreshLibrary()
         _state.postValue(UiState.Done)
     }
 
+    /** Abort the flow. Never signs out: an abandoned server switch restores the previous server. */
     fun cancel() {
         authCoordinator?.cancelAuth()
+        awaitingLibraries = false
+        restoreIfSwitchAbandoned()
+    }
+
+    @OptIn(InternalCoroutinesApi::class)
+    private fun restoreIfSwitchAbandoned() {
+        val snapshot = switchSnapshot ?: return
+        switchSnapshot = null
+        if (finished) return
+        Timber.i("[CarSignIn] server switch abandoned; restoring ${snapshot.server.name}/${snapshot.library.name}")
+        plexPrefs.server = snapshot.server
+        plexPrefs.library = snapshot.library
+        plexConfig.setPotentialConnections(snapshot.server.connections)
+        // A failed attempt at another server may have left PlexConfig pointed elsewhere.
+        plexConfig.connectToServerWithRetryAndState(plexMediaService)
+        plexLoginRepo.determineLoginState()
     }
 
     override fun onCleared() {
+        // Backstop for the activity being finished without cancel() (e.g. system back).
+        restoreIfSwitchAbandoned()
         plexLoginRepo.loginEvent.removeObserver(loginObserver)
         plexConfig.connectionState.removeObserver(connectionObserver)
         authCoordinator?.dispose()

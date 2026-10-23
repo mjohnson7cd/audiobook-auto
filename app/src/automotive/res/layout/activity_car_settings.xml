@@ -29,15 +29,13 @@
                 android:layout_weight="1"
                 android:text="@string/car_settings_title" />
 
-            <Button
+            <TextView
                 android:id="@+id/car_settings_back"
-                style="@style/CarButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="0dp"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:gravity="center"
                 android:text="✕"
+                android:textColor="@android:color/white"
                 android:textSize="32sp" />
         </LinearLayout>
 
@@ -76,12 +74,28 @@
             android:layout_height="wrap_content"
             android:text="@string/car_settings_switch_library" />
 
-        <Button
-            android:id="@+id/car_settings_sync"
-            style="@style/CarButton.Outlined"
+        <!-- Spinner sits inside the sync button's right edge while a sync runs. -->
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/car_settings_sync_now" />
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/car_settings_sync"
+                style="@style/CarButton.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/car_settings_sync_now" />
+
+            <ProgressBar
+                android:id="@+id/car_settings_sync_progress"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="28dp"
+                android:indeterminateTint="@android:color/white"
+                android:translationZ="8dp"
+                android:visibility="gone" />
+        </FrameLayout>
 
         <Button
             android:id="@+id/car_settings_sign_out"

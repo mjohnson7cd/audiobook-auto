@@ -91,6 +91,26 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <!--
+          Playback speed picker, opened from car settings. Distraction-optimized (large targets,
+          no text entry) so it stays usable if the car starts moving while it is open.
+        -->
+        <activity
+            android:name="io.github.mjohnson7cd.audiobook.features.car.CarPlaybackSpeedActivity"
+            android:exported="false"
+            android:label="@string/car_settings_speed"
+            android:theme="@style/CarDialogTheme">
+            <meta-data
+                android:name="distractionOptimized"
+                android:value="true" />
+        </activity>
+
+        <!-- Serves cached cover art to the car media center (separate process). Read-only. -->
+        <provider
+            android:name="io.github.mjohnson7cd.audiobook.features.car.CoverArtProvider"
+            android:authorities="${applicationId}.coverart"
+            android:exported="true" />
     </application>
 
 </manifest>

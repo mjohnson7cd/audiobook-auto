@@ -430,5 +430,14 @@ class LibrarySyncRepository
             }
             
             Timber.i("Cover art download complete: $downloaded new, $skipped cached, $failed failed")
+            
+            // Update tracks with cached artwork URIs
+            Timber.i("Updating track artwork URIs...")
+            books.forEach { book ->
+                val cachedUri = io.github.mjohnson7cd.audiobook.features.car.CoverArtCache.getCachedCoverUri(context, book.id)
+                if (cachedUri != null) {
+                    trackRepository.updateArtworkForBook(book.id, cachedUri.toString())
+                }
+            }
         }
     }

@@ -131,6 +131,9 @@ interface ITrackRepository {
     /** Marks tracks in book as watched by setting the progress in all to 0 */
     suspend fun markTracksInBookAsWatched(bookId: String)
 
+    /** Updates the artwork field for all tracks belonging to the given book */
+    suspend fun updateArtworkForBook(bookId: String, artworkUri: String)
+
     companion object {
         /**
          * The value representing the [MediaItemTrack.id] for any track which does not exist in the
@@ -492,6 +495,12 @@ class TrackRepository
         suspend fun deleteByLibraryId(libraryId: String) {
             withContext(Dispatchers.IO) {
                 trackDao.deleteByLibraryId(libraryId)
+            }
+        }
+
+        override suspend fun updateArtworkForBook(bookId: String, artworkUri: String) {
+            withContext(Dispatchers.IO) {
+                trackDao.updateArtworkForBook(bookId, artworkUri)
             }
         }
     }

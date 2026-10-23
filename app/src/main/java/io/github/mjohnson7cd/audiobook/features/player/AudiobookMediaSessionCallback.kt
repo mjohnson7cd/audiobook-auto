@@ -15,6 +15,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.github.michaelbull.result.get
 import kotlinx.coroutines.*
 import io.github.mjohnson7cd.audiobook.BuildConfig
+import io.github.mjohnson7cd.audiobook.features.car.CoverArtCache
 import io.github.mjohnson7cd.audiobook.application.Injector
 import io.github.mjohnson7cd.audiobook.application.MILLIS_PER_SECOND
 import io.github.mjohnson7cd.audiobook.data.local.IBookRepository
@@ -481,8 +482,8 @@ class AudiobookMediaSessionCallback
             }
         }
 
-        // Car/system next/prev buttons jump by the user's interval (like hardware media keys);
-        // chapter skip stays available via the SKIP_TO_NEXT/PREVIOUS custom actions.
+        // Not advertised in the session actions; kept for controllers that send them anyway
+        // (they jump by the user's interval, like hardware media keys).
         override fun onSkipToNext() {
             skipForwards()
         }
@@ -553,6 +554,15 @@ class AudiobookMediaSessionCallback
             return false
         }
 
+        // Car media calls prepare() when it shows Now Playing; without this the screen sits on
+        // "Loading content..." (state NONE, no metadata) until the user presses play.
+        // Resumes playing (not just paused) by request: opening the app in the car starts the book.
+        override fun onPrepare() {
+            Timber.i("[AndroidAuto] onPrepare")
+            val loggedIn = plexLoginRepo.loginEvent.value?.peekContent() == LOGGED_IN_FULLY
+            if (loggedIn && !mediaController.playbackState.isPrepared) resumePlayFromEmpty(true)
+        }
+
         override fun onPlay() {
             // Pre-flight authentication check
             if (!checkAuthenticationOrError()) return
@@ -605,6 +615,8 @@ class AudiobookMediaSessionCallback
                 SKIP_BACKWARDS_STRING -> skipBackwards()
                 SKIP_TO_NEXT_STRING -> skipToNext()
                 SKIP_TO_PREVIOUS_STRING -> skipToPrevious()
+                // MediaPlayerService's prefs listener applies the speed and refreshes the icon.
+                PLAYBACK_SPEED_STRING -> prefsRepo.playbackSpeed = nextPlaybackSpeed(prefsRepo.playbackSpeed)
             }
         }
 
@@ -782,13 +794,30 @@ class AudiobookMediaSessionCallback
                 trackListStateManager.trackList = normalizedTracks
                 val metadataList = buildPlaylist(normalizedTracks, plexConfig)
 
+                // Car media (separate process) can't load the authenticated Plex thumb, so the queue
+                // (chapter list) gets the same content:// cover the now-playing art uses.
+                val carCoverUri =
+                    if (BuildConfig.IS_AUTOMOTIVE) CoverArtCache.getCachedCoverUri(appContext, bookId) else null
                 val queueItems =
                     metadataList.zip(normalizedTracks).map { (metadata, track) ->
                         val numericTrackId = track.id.removePrefix("plex:").toLongOrNull() ?: track.id.hashCode().toLong()
-                        MediaSessionCompat.QueueItem(
-                            metadata.fullDescription,
-                            numericTrackId,
-                        )
+                        val description =
+                            metadata.fullDescription.let { d ->
+                                if (carCoverUri == null) {
+                                    d
+                                } else {
+                                    android.support.v4.media.MediaDescriptionCompat.Builder()
+                                        .setMediaId(d.mediaId)
+                                        .setTitle(d.title)
+                                        .setSubtitle(d.subtitle)
+                                        .setDescription(d.description)
+                                        .setExtras(d.extras)
+                                        .setMediaUri(d.mediaUri)
+                                        .setIconUri(carCoverUri)
+                                        .build()
+                                }
+                            }
+                        MediaSessionCompat.QueueItem(description, numericTrackId)
                     }
                 mediaSession.setQueue(queueItems)
 

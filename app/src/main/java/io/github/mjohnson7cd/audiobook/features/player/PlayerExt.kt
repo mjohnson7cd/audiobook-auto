@@ -52,8 +52,14 @@ fun Player.skipToNext(
     Timber.i("Player.skipToNext called")
     val chapters = currentlyPlaying.book.value.chapters
     // Defense-in-depth: guard against empty chapter list (e.g. book not yet loaded)
+    // No embedded chapters (multi-track book): each track is a chapter
     if (chapters.isEmpty()) {
-        Timber.w("skipToNext called with empty chapter list, ignoring")
+        if (hasNextMediaItem()) {
+            seekTo(currentMediaItemIndex + 1, 0)
+            progressUpdater.updateProgressWithoutParameters()
+        } else {
+            showLastChapterToast()
+        }
         return
     }
     val currentChapterIndex = chapters.indexOf(currentlyPlaying.chapter.value)
@@ -76,15 +82,19 @@ fun Player.skipToNext(
         seekTo(containingTrackIndex, nextChapter.startTimeOffset + 300)
         progressUpdater.updateProgressWithoutParameters()
     } else {
-        val toast =
-            Toast.makeText(
-                Injector.get().applicationContext(),
-                R.string.skip_forwards_reached_last_chapter,
-                Toast.LENGTH_LONG,
-            )
-        toast.setGravity(Gravity.BOTTOM, 0, 200)
-        toast.show()
+        showLastChapterToast()
     }
+}
+
+private fun showLastChapterToast() {
+    val toast =
+        Toast.makeText(
+            Injector.get().applicationContext(),
+            R.string.skip_forwards_reached_last_chapter,
+            Toast.LENGTH_LONG,
+        )
+    toast.setGravity(Gravity.BOTTOM, 0, 200)
+    toast.show()
 }
 
 /** Skip to previous chapter */
@@ -96,8 +106,11 @@ fun Player.skipToPrevious(
     Timber.i("Player.skipToPrevious called")
     val chapters = currentlyPlaying.book.value.chapters
     // Defense-in-depth: guard against empty chapter list (e.g. book not yet loaded)
+    // No embedded chapters (multi-track book): restart the track, or go to the previous one
     if (chapters.isEmpty()) {
-        Timber.w("skipToPrevious called with empty chapter list, ignoring")
+        val restart = currentPosition > SKIP_TO_PREVIOUS_CHAPTER_THRESHOLD_SECONDS * MILLIS_PER_SECOND || !hasPreviousMediaItem()
+        seekTo(if (restart) currentMediaItemIndex else currentMediaItemIndex - 1, 0)
+        progressUpdater.updateProgressWithoutParameters()
         return
     }
     val currentChapterIndex = chapters.indexOf(currentlyPlaying.chapter.value)

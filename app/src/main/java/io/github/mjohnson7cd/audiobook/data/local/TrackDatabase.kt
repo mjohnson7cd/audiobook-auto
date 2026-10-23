@@ -188,6 +188,12 @@ interface TrackDao {
     @Query("SELECT COUNT(*) FROM MediaItemTrack WHERE parentKey = :bookId")
     suspend fun getTrackCountForAudiobookAsync(bookId: String): Int
 
+    @Query("UPDATE MediaItemTrack SET artwork = :artworkUri WHERE parentKey = :bookId")
+    suspend fun updateArtworkForBook(
+        bookId: String,
+        artworkUri: String,
+    )
+
     @Query(
         "UPDATE MediaItemTrack SET progress = :trackProgress, lastViewedAt = :lastViewedAt WHERE id = :trackId",
     )

@@ -9,6 +9,7 @@ import android.widget.EditText
 import android.widget.ListView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import io.github.mjohnson7cd.audiobook.R
@@ -28,7 +29,8 @@ import io.github.mjohnson7cd.audiobook.features.car.CarSignInViewModel.UiState
  */
 class CarSignInActivity : AppCompatActivity() {
     private val viewModel: CarSignInViewModel by lazy {
-        ViewModelProvider(this, CarSignInViewModel.Factory())[CarSignInViewModel::class.java]
+        val switchServer = intent?.getBooleanExtra(EXTRA_SWITCH_SERVER, false) ?: false
+        ViewModelProvider(this, CarSignInViewModel.Factory(switchServer))[CarSignInViewModel::class.java]
     }
 
     private lateinit var title: TextView
@@ -42,6 +44,7 @@ class CarSignInActivity : AppCompatActivity() {
     private lateinit var spacer: View
     private lateinit var primary: Button
     private lateinit var secondary: Button
+    private lateinit var chooseServer: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,6 +60,15 @@ class CarSignInActivity : AppCompatActivity() {
         spacer = findViewById(R.id.car_sign_in_spacer)
         primary = findViewById(R.id.car_sign_in_primary)
         secondary = findViewById(R.id.car_sign_in_secondary)
+        chooseServer = findViewById(R.id.car_sign_in_choose_server)
+
+        // System back behaves like Cancel (aborts auth, restores an abandoned server switch).
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() = cancelAndFinish()
+            },
+        )
 
         viewModel.state.observe(this) { render(it) }
     }
@@ -65,7 +77,7 @@ class CarSignInActivity : AppCompatActivity() {
         // Reset to a neutral layout, then enable what this step needs.
         title.setText(R.string.car_sign_in_title)
         message.text = ""
-        listOf(link, codeLabel, code, progress, pin, list, primary).forEach { it.visibility = View.GONE }
+        listOf(link, codeLabel, code, progress, pin, list, primary, chooseServer).forEach { it.visibility = View.GONE }
         spacer.visibility = View.VISIBLE
         secondary.setText(R.string.car_cancel)
         secondary.setOnClickListener { cancelAndFinish() }
@@ -128,6 +140,10 @@ class CarSignInActivity : AppCompatActivity() {
             is UiState.Error -> {
                 message.text = messageText(state.message, state.detail)
                 showPrimary(R.string.car_sign_in_retry) { viewModel.retry() }
+                if (state.canChooseServer) {
+                    chooseServer.visibility = View.VISIBLE
+                    chooseServer.setOnClickListener { viewModel.chooseDifferentServer() }
+                }
             }
         }
     }
@@ -169,5 +185,10 @@ class CarSignInActivity : AppCompatActivity() {
     private fun cancelAndFinish() {
         viewModel.cancel()
         finish()
+    }
+
+    companion object {
+        /** Open straight at the server list, keeping the current server until a new one works. */
+        const val EXTRA_SWITCH_SERVER = "io.github.mjohnson7cd.audiobook.car.SWITCH_SERVER"
     }
 }

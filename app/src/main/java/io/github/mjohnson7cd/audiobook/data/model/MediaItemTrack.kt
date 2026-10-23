@@ -101,13 +101,14 @@ data class MediaItemTrack(
             forceUseNetwork: Boolean = false,
         ) = if (forceUseNetwork) {
             Timber.i("Force using network track: $network")
-            network.copy(cached = local.cached)
+            network.copy(cached = local.cached, artwork = local.artwork)
         } else {
-            // Always preserve local progress and lastViewedAt to prevent race conditions
+            // Always preserve local progress, lastViewedAt, and artwork (cached cover URI)
             network.copy(
                 cached = local.cached,
                 lastViewedAt = local.lastViewedAt,
                 progress = local.progress,
+                artwork = local.artwork,
             )
         }
 
@@ -321,15 +322,9 @@ fun MediaItemTrack.toMediaMetadata(plexConfig: PlexConfig): MediaMetadataCompat 
     return metadataBuilder.build()
 }
 
-fun List<MediaItemTrack>.asChapterList(bookId: String = NO_AUDIOBOOK_FOUND_ID): List<Chapter> {
-    val outList = mutableListOf<Chapter>()
-    var cumStartOffset = 0L
-    for (track in this) {
-        outList.add(track.asChapter(cumStartOffset, bookId))
-        cumStartOffset += track.duration
-    }
-    return outList
-}
+// Chapter offsets are track-relative (see getChapterAt / PlaybackState.currentChapter), so each
+// track-as-chapter starts at 0 — same as ChapterRepository's fallback.
+fun List<MediaItemTrack>.asChapterList(bookId: String = NO_AUDIOBOOK_FOUND_ID): List<Chapter> = map { it.asChapter(0L, bookId) }
 
 fun MediaItemTrack.asChapter(
     startOffset: Long,

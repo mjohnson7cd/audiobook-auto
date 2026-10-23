@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.support.v4.media.session.PlaybackStateCompat
 import android.view.View
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -38,6 +39,7 @@ class CarSettingsActivity : AppCompatActivity() {
     private lateinit var signIn: Button
     private lateinit var switchLibrary: Button
     private lateinit var sync: Button
+    private lateinit var syncProgress: ProgressBar
     private lateinit var signOut: Button
     private lateinit var jumpForward: Button
     private lateinit var jumpBackward: Button
@@ -55,6 +57,7 @@ class CarSettingsActivity : AppCompatActivity() {
         signIn = findViewById(R.id.car_settings_sign_in)
         switchLibrary = findViewById(R.id.car_settings_switch_library)
         sync = findViewById(R.id.car_settings_sync)
+        syncProgress = findViewById(R.id.car_settings_sync_progress)
         signOut = findViewById(R.id.car_settings_sign_out)
         jumpForward = findViewById(R.id.car_settings_jump_forward)
         jumpBackward = findViewById(R.id.car_settings_jump_backward)
@@ -64,19 +67,25 @@ class CarSettingsActivity : AppCompatActivity() {
 
         signIn.setOnClickListener { openSignIn() }
         switchLibrary.setOnClickListener {
-            // Keep the Plex account/user; re-pick server and library in the sign-in flow.
-            plexConfig.clearServer()
-            plexLoginRepo.determineLoginState()
-            openSignIn()
+            // Keep the account/user AND the current server/library until a new library is
+            // chosen; the sign-in flow restores them if the switch is cancelled or fails.
+            CarIntegration.signInIntent(this)
+                ?.putExtra(CarSignInActivity.EXTRA_SWITCH_SERVER, true)
+                ?.let { startActivity(it) }
         }
         sync.setOnClickListener {
             component.librarySyncRepo().refreshLibrary()
             Toast.makeText(this, R.string.car_settings_sync_started, Toast.LENGTH_SHORT).show()
         }
+        component.librarySyncRepo().isRefreshing.observe(this) { refreshing ->
+            sync.isEnabled = !refreshing
+            sync.setText(if (refreshing) R.string.car_settings_syncing else R.string.car_settings_sync_now)
+            syncProgress.visibility = if (refreshing) View.VISIBLE else View.GONE
+        }
         signOut.setOnClickListener { confirmSignOut() }
         
         // Back button
-        findViewById<Button>(R.id.car_settings_back).setOnClickListener {
+        findViewById<TextView>(R.id.car_settings_back).setOnClickListener {
             finish()
         }
         
@@ -88,10 +97,7 @@ class CarSettingsActivity : AppCompatActivity() {
             prefsRepo.jumpBackwardSeconds = nextOf(JUMP_OPTIONS_SECONDS, prefsRepo.jumpBackwardSeconds)
             renderPlayback()
         }
-        speed.setOnClickListener {
-            prefsRepo.playbackSpeed = nextOf(SPEED_OPTIONS, prefsRepo.playbackSpeed)
-            renderPlayback()
-        }
+        speed.setOnClickListener { startActivity(android.content.Intent(this, CarPlaybackSpeedActivity::class.java)) }
     }
     
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
@@ -136,8 +142,13 @@ class CarSettingsActivity : AppCompatActivity() {
             } else {
                 ""
             }
-        signIn.visibility = if (signedIn) View.GONE else View.VISIBLE
-        switchLibrary.visibility = if (signedIn) View.VISIBLE else View.GONE
+        // Sign in: only when truly signed out (no saved server). If there's a server but sign-in
+        // is incomplete (no library), "Switch server / library" is the escape hatch.
+        signIn.visibility = if (server == null && !signedIn) View.VISIBLE else View.GONE
+        // Switch: offered when fully signed in OR when stuck half-signed-in (server saved but
+        // unreachable / no library chosen), so the user can pick a different server.
+        switchLibrary.visibility =
+            if ((signedIn || (plexPrefs.accountAuthToken.isNotEmpty() && user != null && server != null))) View.VISIBLE else View.GONE
         sync.visibility = if (signedIn) View.VISIBLE else View.GONE
         signOut.visibility = if (plexPrefs.accountAuthToken.isNotEmpty()) View.VISIBLE else View.GONE
     }
@@ -192,7 +203,6 @@ class CarSettingsActivity : AppCompatActivity() {
 
     companion object {
         val JUMP_OPTIONS_SECONDS = listOf(10L, 15L, 20L, 30L, 60L, 90L)
-        val SPEED_OPTIONS = listOf(0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
 
         /** Next option after [current], wrapping; unknown values restart at the first option. */
         fun <T> nextOf(
