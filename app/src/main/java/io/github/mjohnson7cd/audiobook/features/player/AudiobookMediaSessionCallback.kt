@@ -481,12 +481,14 @@ class AudiobookMediaSessionCallback
             }
         }
 
+        // Car/system next/prev buttons jump by the user's interval (like hardware media keys);
+        // chapter skip stays available via the SKIP_TO_NEXT/PREVIOUS custom actions.
         override fun onSkipToNext() {
-            skipToNext()
+            skipForwards()
         }
 
         override fun onSkipToPrevious() {
-            skipToPrevious()
+            skipBackwards()
         }
 
         private fun skipToNext() {
