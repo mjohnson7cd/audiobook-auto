@@ -626,6 +626,11 @@ class AudiobookMediaSessionCallback
                 SKIP_TO_PREVIOUS_STRING -> skipToPrevious()
                 // MediaPlayerService's prefs listener applies the speed and refreshes the icon.
                 PLAYBACK_SPEED_STRING -> prefsRepo.playbackSpeed = nextPlaybackSpeed(prefsRepo.playbackSpeed)
+                DOWNLOAD_BOOK_STRING -> {
+                    Timber.i("Download book requested from car UI - not yet implemented")
+                    // TODO: Trigger download for current audiobook
+                    // cachedFileManager.downloadTracks(currentlyPlaying.tracks)
+                }
             }
         }
 

@@ -14,7 +14,7 @@ import io.github.mjohnson7cd.audiobook.data.local.PrefsRepo
 // Order matters: with no ACTION_SKIP_TO_NEXT/PREVIOUS, car UIs put the first two custom actions
 // next to play (-10s | play | +30s). AAOS's ControlBar then fills the outer-left slot with the next
 // action and turns outer-right into ⋮, so a blank spacer holds outer-left and everything after it
-// lands in the overflow menu: prev chapter, next chapter, speed.
+// lands in the overflow menu: download, prev chapter, next chapter, speed.
 // The trailing spacer keeps ⋮ in its slot while the car briefly re-lays out the bar on each state
 // push (it drops -10/+30 then re-adds them); without it the open overflow row goes blank.
 fun buildCustomActions(prefsRepo: PrefsRepo): List<PlaybackStateCompat.CustomAction> =
@@ -22,11 +22,20 @@ fun buildCustomActions(prefsRepo: PrefsRepo): List<PlaybackStateCompat.CustomAct
         makeSkipBackward(prefsRepo),
         makeSkipForward(prefsRepo),
         if (BuildConfig.IS_AUTOMOTIVE) CAR_SLOT_SPACER else null,
+        if (BuildConfig.IS_AUTOMOTIVE) DOWNLOAD_BOOK else null,
         SKIP_TO_PREVIOUS,
         SKIP_TO_NEXT,
         makePlaybackSpeed(prefsRepo),
         if (BuildConfig.IS_AUTOMOTIVE) CAR_SLOT_SPACER_END else null,
     )
+
+const val DOWNLOAD_BOOK_STRING = "Download book"
+val DOWNLOAD_BOOK: PlaybackStateCompat.CustomAction =
+    PlaybackStateCompat.CustomAction.Builder(
+        DOWNLOAD_BOOK_STRING,
+        "Download for offline",
+        R.drawable.ic_cloud_download_white,
+    ).build()
 
 /** Second invisible no-op action; see the ordering note on [buildCustomActions]. */
 val CAR_SLOT_SPACER_END: PlaybackStateCompat.CustomAction =
