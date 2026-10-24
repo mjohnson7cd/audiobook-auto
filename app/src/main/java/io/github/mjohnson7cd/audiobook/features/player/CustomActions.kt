@@ -21,12 +21,13 @@ import io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.Cach
 fun buildCustomActions(
     prefsRepo: PrefsRepo,
     downloadStatus: CacheStatus = CacheStatus.NOT_CACHED,
+    downloadPercent: Int = 0,
 ): List<PlaybackStateCompat.CustomAction> =
     listOfNotNull(
         makeSkipBackward(prefsRepo),
         makeSkipForward(prefsRepo),
         if (BuildConfig.IS_AUTOMOTIVE) CAR_SLOT_SPACER else null,
-        if (BuildConfig.IS_AUTOMOTIVE) makeDownloadBook(downloadStatus) else null,
+        if (BuildConfig.IS_AUTOMOTIVE) makeDownloadBook(downloadStatus, downloadPercent) else null,
         SKIP_TO_PREVIOUS,
         SKIP_TO_NEXT,
         makePlaybackSpeed(prefsRepo),
@@ -40,16 +41,45 @@ const val DOWNLOAD_BOOK_STRING = "Download book"
  * the only feedback that reliably shows on AAOS (toasts from the media service are queued but not
  * drawn while the car media app is in front). The action id stays [DOWNLOAD_BOOK_STRING] in every
  * state; the callback decides what a tap means.
+ *
+ * While downloading, the icon is a ring that fills clockwise in 10% steps. Custom action icons are
+ * plain resource ids the car inflates itself, so a real animated drawable/progress view isn't
+ * possible; stepping through static frames is. Keep the step coarse: every change is a new
+ * PlaybackState push, which re-lays out the car's control bar.
  */
-fun makeDownloadBook(status: CacheStatus): PlaybackStateCompat.CustomAction {
+fun makeDownloadBook(
+    status: CacheStatus,
+    percent: Int = 0,
+): PlaybackStateCompat.CustomAction {
     val (label, icon) =
         when (status) {
             CacheStatus.NOT_CACHED -> "Download for offline" to R.drawable.ic_cloud_download_white
-            CacheStatus.CACHING -> "Downloading…" to R.drawable.ic_sync
+            CacheStatus.CACHING -> {
+                val step = downloadProgressStep(percent)
+                "Downloading $step%" to DOWNLOAD_PROGRESS_ICONS[step / 10]
+            }
             CacheStatus.CACHED -> "Downloaded" to R.drawable.ic_cloud_done_white
         }
     return PlaybackStateCompat.CustomAction.Builder(DOWNLOAD_BOOK_STRING, label, icon).build()
 }
+
+/** [percent] rounded down to the 10% step shown by the car download icon (0..100). */
+fun downloadProgressStep(percent: Int): Int = (percent.coerceIn(0, 100) / 10) * 10
+
+private val DOWNLOAD_PROGRESS_ICONS =
+    intArrayOf(
+        R.drawable.ic_car_download_progress_0,
+        R.drawable.ic_car_download_progress_10,
+        R.drawable.ic_car_download_progress_20,
+        R.drawable.ic_car_download_progress_30,
+        R.drawable.ic_car_download_progress_40,
+        R.drawable.ic_car_download_progress_50,
+        R.drawable.ic_car_download_progress_60,
+        R.drawable.ic_car_download_progress_70,
+        R.drawable.ic_car_download_progress_80,
+        R.drawable.ic_car_download_progress_90,
+        R.drawable.ic_car_download_progress_100,
+    )
 
 /** Second invisible no-op action; see the ordering note on [buildCustomActions]. */
 val CAR_SLOT_SPACER_END: PlaybackStateCompat.CustomAction =

@@ -1,6 +1,7 @@
 package io.github.mjohnson7cd.audiobook.features.car
 
 import android.os.Bundle
+import android.text.format.Formatter
 import android.support.v4.media.session.PlaybackStateCompat
 import android.view.View
 import android.widget.Button
@@ -25,7 +26,8 @@ import timber.log.Timber
  * button (APPLICATION_PREFERENCES). Parked-only: not distraction-optimized.
  *
  * Covers what the phone settings screen would otherwise be needed for: account (sign in,
- * switch server/library, sign out), skip intervals, playback speed, and a manual library sync.
+ * switch server/library, sign out), skip intervals, playback speed, a manual library sync, and
+ * deleting all downloaded books.
  */
 class CarSettingsActivity : AppCompatActivity() {
     private val component by lazy { Injector.get() }
@@ -44,6 +46,11 @@ class CarSettingsActivity : AppCompatActivity() {
     private lateinit var jumpForward: Button
     private lateinit var jumpBackward: Button
     private lateinit var speed: Button
+    private lateinit var storageStatus: TextView
+    private lateinit var deleteDownloads: Button
+    private lateinit var deleteProgress: ProgressBar
+    private var downloadedBytes = 0L
+    private var deleting = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +69,10 @@ class CarSettingsActivity : AppCompatActivity() {
         jumpForward = findViewById(R.id.car_settings_jump_forward)
         jumpBackward = findViewById(R.id.car_settings_jump_backward)
         speed = findViewById(R.id.car_settings_speed)
+        storageStatus = findViewById(R.id.car_settings_storage_status)
+        deleteDownloads = findViewById(R.id.car_settings_delete_downloads)
+        deleteProgress = findViewById(R.id.car_settings_delete_progress)
+        deleteDownloads.setOnClickListener { confirmDeleteDownloads() }
         findViewById<TextView>(R.id.car_settings_version).text =
             getString(R.string.car_settings_version, BuildConfig.VERSION_NAME)
 
@@ -120,6 +131,81 @@ class CarSettingsActivity : AppCompatActivity() {
         // The sign-in activity may have changed account state while we were paused.
         renderAccount()
         renderPlayback()
+        refreshStorage()
+    }
+
+    /** Re-measures downloaded files (a download may have finished while we were paused). */
+    private fun refreshStorage() {
+        lifecycleScope.launch {
+            downloadedBytes = component.cachedFileManager().getDownloadedBytes()
+            renderStorage()
+        }
+    }
+
+    private fun renderStorage() {
+        val size = Formatter.formatShortFileSize(this, downloadedBytes)
+        storageStatus.text =
+            if (downloadedBytes > 0) {
+                getString(R.string.car_settings_storage_used, size)
+            } else {
+                getString(R.string.car_settings_storage_empty)
+            }
+        deleteDownloads.isEnabled = downloadedBytes > 0 && !deleting
+        deleteDownloads.text =
+            when {
+                deleting -> getString(R.string.car_settings_deleting_downloads)
+                downloadedBytes > 0 -> getString(R.string.car_settings_delete_downloads_size, size)
+                else -> getString(R.string.car_settings_delete_downloads)
+            }
+        deleteProgress.visibility = if (deleting) View.VISIBLE else View.GONE
+    }
+
+    private fun confirmDeleteDownloads() {
+        lifecycleScope.launch {
+            // Measure again right before asking so the number shown is what will be freed.
+            downloadedBytes = component.cachedFileManager().getDownloadedBytes()
+            renderStorage()
+            if (downloadedBytes <= 0) return@launch
+            AlertDialog.Builder(this@CarSettingsActivity)
+                .setTitle(R.string.car_settings_delete_downloads_confirm_title)
+                .setMessage(
+                    getString(
+                        R.string.car_settings_delete_downloads_confirm,
+                        Formatter.formatShortFileSize(this@CarSettingsActivity, downloadedBytes),
+                    ),
+                )
+                .setPositiveButton(R.string.car_settings_delete) { _, _ -> deleteAllDownloads() }
+                .setNegativeButton(R.string.car_cancel, null)
+                .show()
+        }
+    }
+
+    private fun deleteAllDownloads() {
+        deleting = true
+        renderStorage()
+        lifecycleScope.launch {
+            val result =
+                try {
+                    component.cachedFileManager().deleteAllDownloads()
+                } catch (e: Exception) {
+                    Timber.e(e, "[CarSettings] deleting downloads failed")
+                    null
+                }
+            deleting = false
+            downloadedBytes = component.cachedFileManager().getDownloadedBytes()
+            renderStorage()
+            if (result != null) {
+                Toast.makeText(
+                    this@CarSettingsActivity,
+                    getString(
+                        R.string.car_settings_delete_downloads_done,
+                        result.fileCount,
+                        Formatter.formatShortFileSize(this@CarSettingsActivity, result.bytesFreed),
+                    ),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
     }
 
     private fun renderAccount() {

@@ -49,6 +49,7 @@ import io.github.mjohnson7cd.audiobook.data.model.getActiveTrack
 import io.github.mjohnson7cd.audiobook.data.model.getProgress
 import io.github.mjohnson7cd.audiobook.data.model.toMediaItem
 import io.github.mjohnson7cd.audiobook.data.sources.plex.*
+import io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus
 import io.github.mjohnson7cd.audiobook.data.sources.plex.IPlexLoginRepo.LoginState.*
 import io.github.mjohnson7cd.audiobook.data.sources.plex.model.getDuration
 import io.github.mjohnson7cd.audiobook.features.car.CarErrorResolution
@@ -123,12 +124,21 @@ class MediaPlayerService :
     lateinit var prefsRepo: PrefsRepo
 
     @Inject
-    lateinit var cachedFileManager: io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager
+    lateinit var cachedFileManager: ICachedFileManager
 
     // AAOS only: drives the download button's icon in the car overflow menu.
-    private var carDownloadStatus = io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus.NOT_CACHED
+    private var carDownloadStatus = CacheStatus.NOT_CACHED
+    private var carDownloadPercentStep = 0
+    private var carDownloadStatusBookId: String? = null
+    private var carDownloadGraceUntil = 0L
     private var carActiveDownloads: Set<String> = emptySet()
-    private var carCachedBookIds: Set<String> = emptySet()
+    private var carDownloadProgress: Map<String, Int> = emptyMap()
+    private val carDownloadProgressObserver =
+        Observer<Map<String, Int>> {
+            carDownloadProgress = it
+            refreshCarDownloadStatus()
+        }
+    private var carCachedBookIds: Set<String>? = null
     private val carActiveDownloadsObserver =
         Observer<Set<String>> {
             carActiveDownloads = it.toSet()
@@ -157,6 +167,9 @@ class MediaPlayerService :
     lateinit var librarySyncRepository: LibrarySyncRepository
 
     companion object {
+        /** How long the car download button holds 100% waiting for the DB cached flag. */
+        private const val CAR_DOWNLOAD_FINISH_GRACE_MS = 2_000L
+
         /** Republish the playback state only when the position drifts this far from the controllers' extrapolation. */
         const val POSITION_DRIFT_TOLERANCE_MS = 1500L
 
@@ -386,6 +399,7 @@ class MediaPlayerService :
         if (BuildConfig.IS_AUTOMOTIVE) {
             plexConfig.isConnected.observeForever(carLibrarySyncObserver)
             cachedFileManager.activeBookDownloads.observeForever(carActiveDownloadsObserver)
+            cachedFileManager.bookDownloadProgress.observeForever(carDownloadProgressObserver)
             carCachedBooksLiveData.observeForever(carCachedBooksObserver)
             serviceScope.launch(Injector.get().unhandledExceptionHandler()) {
                 currentlyPlaying.book.collect { refreshCarDownloadStatus() }
@@ -406,22 +420,58 @@ class MediaPlayerService :
     }
 
     private fun updateCustomActions() {
-        sessionCustomActions = buildCustomActions(prefsRepo, carDownloadStatus)
+        sessionCustomActions = buildCustomActions(prefsRepo, carDownloadStatus, carDownloadPercentStep)
         updateSessionPlaybackState()
     }
 
+    /**
+     * Recomputes the car download button from the service-owned download state (Fetch progress,
+     * active downloads, DB cached flags). The state lives here, not in the car UI, and every
+     * PlaybackState push carries the current icon, so closing and reopening the car's overflow
+     * row always redraws the right icon: progress ring while downloading, done when cached,
+     * download otherwise.
+     */
     private fun refreshCarDownloadStatus() {
-        val bookId = currentlyPlaying.book.value.id
+        val book = currentlyPlaying.book.value
+        val bookId = book.id
+        val percent = carDownloadProgress[bookId]
+        // The DB LiveData is the source of truth once it has emitted; the in-memory playing
+        // book's isCached goes stale when downloads are deleted mid-playback.
+        val cached = carCachedBookIds?.contains(bookId) ?: book.isCached
+        val now = android.os.SystemClock.elapsedRealtime()
+        // CachedFileManager drops the book from the progress map right after writing the cached
+        // flags, but Room's LiveData re-query lands a moment later. Hold the full ring through
+        // that gap instead of flashing the plain download icon between 100% and done.
+        val justFinished =
+            percent == null && !cached && bookId == carDownloadStatusBookId &&
+                carDownloadStatus == CacheStatus.CACHING && carDownloadPercentStep == 100
+        if (justFinished && carDownloadGraceUntil == 0L) {
+            carDownloadGraceUntil = now + CAR_DOWNLOAD_FINISH_GRACE_MS
+            serviceScope.launch {
+                delay(CAR_DOWNLOAD_FINISH_GRACE_MS + 100)
+                refreshCarDownloadStatus()
+            }
+        }
+        val inGrace = justFinished && now < carDownloadGraceUntil
+        if (!justFinished) carDownloadGraceUntil = 0L
         val status =
             when {
-                bookId in carActiveDownloads -> io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus.CACHING
-                bookId in carCachedBookIds || currentlyPlaying.book.value.isCached ->
-                    io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus.CACHED
-                else -> io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus.NOT_CACHED
+                percent != null || bookId in carActiveDownloads || inGrace -> CacheStatus.CACHING
+                cached -> CacheStatus.CACHED
+                else -> CacheStatus.NOT_CACHED
             }
-        if (status != carDownloadStatus) {
-            Timber.i("Car download status for $bookId: $carDownloadStatus -> $status")
+        val step =
+            when {
+                status != CacheStatus.CACHING -> 0
+                inGrace -> 100
+                else -> downloadProgressStep(percent ?: 0)
+            }
+        // Only push when the visible icon changes (10% steps): each push re-lays out the bar.
+        if (status != carDownloadStatus || step != carDownloadPercentStep || bookId != carDownloadStatusBookId) {
+            Timber.i("Car download status for $bookId: $carDownloadStatus/$carDownloadPercentStep% -> $status/$step%")
             carDownloadStatus = status
+            carDownloadPercentStep = step
+            carDownloadStatusBookId = bookId
             updateCustomActions()
         }
     }
@@ -917,6 +967,7 @@ class MediaPlayerService :
         plexConfig.isConnected.removeObserver(carLibrarySyncObserver)
         if (BuildConfig.IS_AUTOMOTIVE) {
             cachedFileManager.activeBookDownloads.removeObserver(carActiveDownloadsObserver)
+            cachedFileManager.bookDownloadProgress.removeObserver(carDownloadProgressObserver)
             carCachedBooksLiveData.removeObserver(carCachedBooksObserver)
         }
 

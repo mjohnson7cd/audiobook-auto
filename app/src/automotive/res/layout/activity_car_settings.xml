@@ -133,6 +133,47 @@
             android:layout_height="wrap_content" />
 
         <TextView
+            style="@style/CarText.Body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/car_settings_storage"
+            android:textColor="?attr/colorPrimary" />
+
+        <TextView
+            android:id="@+id/car_settings_storage_status"
+            style="@style/CarText.Body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/car_settings_storage_calculating" />
+
+        <!-- Spinner sits inside the button's right edge while files are being deleted. -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/car_settings_delete_downloads"
+                style="@style/CarButton.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="@string/car_settings_delete_downloads" />
+
+            <ProgressBar
+                android:id="@+id/car_settings_delete_progress"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="28dp"
+                android:indeterminateTint="@android:color/white"
+                android:translationZ="8dp"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <TextView
             android:id="@+id/car_settings_version"
             style="@style/CarText.Body"
             android:layout_width="wrap_content"

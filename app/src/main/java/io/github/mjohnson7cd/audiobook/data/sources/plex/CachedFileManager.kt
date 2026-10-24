@@ -34,6 +34,13 @@ interface ICachedFileManager {
 
     val activeBookDownloads: LiveData<Set<String>>
 
+    /**
+     * Download progress (0-100) per [Audiobook.id] for every book Fetch is working on. A book
+     * stays in the map at 100 until its cached flags have been written to the DB, so observers
+     * can go straight from "downloading" to "downloaded" without a not-cached gap in between.
+     */
+    val bookDownloadProgress: LiveData<Map<String, Int>>
+
     fun cancelCaching()
 
     fun cancelGroup(id: String)
@@ -64,6 +71,22 @@ interface ICachedFileManager {
     )
 
     suspend fun uncacheAllInLibrary(): Int
+
+    /** What [deleteAllDownloads] removed. */
+    data class DeleteAllResult(val fileCount: Int, val bytesFreed: Long)
+
+    /**
+     * Total size in bytes of every downloaded track file in all download locations, including
+     * files from other libraries and partial downloads (i.e. what [deleteAllDownloads] frees).
+     */
+    suspend fun getDownloadedBytes(): Long
+
+    /**
+     * Cancels every running download, deletes every downloaded track file in all download
+     * locations (not just the current library's) and clears the cached flags on all tracks,
+     * books and chapters.
+     */
+    suspend fun deleteAllDownloads(): DeleteAllResult
 
     suspend fun deleteCachedBook(bookId: String)
 
@@ -286,6 +309,58 @@ class CachedFileManager
             return allCachedTrackFiles.size
         }
 
+        /** Every downloaded/partial track file in the active and all other download dirs. */
+        private fun allDownloadedTrackFiles(): List<File> =
+            (listOf(prefsRepo.cachedMediaDir) + externalFileDirs)
+                .distinctBy { it.absolutePath }
+                .flatMap { dir ->
+                    dir.listFiles(
+                        FileFilter { it.isFile && MediaItemTrack.cachedFilePattern.matches(it.name) },
+                    )?.toList() ?: emptyList()
+                }
+
+        override suspend fun getDownloadedBytes(): Long =
+            withContext(Dispatchers.IO) {
+                allDownloadedTrackFiles().sumOf { it.length() }
+            }
+
+        override suspend fun deleteAllDownloads(): ICachedFileManager.DeleteAllResult {
+            Timber.i("Deleting all downloaded files")
+            // Stop Fetch first so nothing is re-written while we delete. deleteAll also removes
+            // Fetch's records, so a later download of the same book starts from scratch.
+            withContext(Dispatchers.Main) {
+                fetch.cancelAll()
+                fetch.deleteAll()
+            }
+            return withContext(Dispatchers.IO) {
+                var count = 0
+                var bytes = 0L
+                allDownloadedTrackFiles().forEach { file ->
+                    val size = file.length()
+                    if (file.delete()) {
+                        count++
+                        bytes += size
+                    } else {
+                        Timber.e("Failed to delete downloaded file: ${file.path}")
+                    }
+                }
+                // Chapter "downloaded" flags live inside each book row, so reset them per book
+                // before the bulk flag reset.
+                bookRepository.getCachedAudiobooksAsync().forEach { book ->
+                    bookRepository.update(
+                        book.copy(
+                            isCached = false,
+                            chapters = book.chapters.map { it.copy(downloaded = false) },
+                        ),
+                    )
+                }
+                trackRepository.uncacheAll()
+                bookRepository.uncacheAll()
+                Timber.i("Deleted $count downloaded files, freed $bytes bytes")
+                ICachedFileManager.DeleteAllResult(count, bytes)
+            }
+        }
+
         /**
          * Deletes cached tracks from the filesystem corresponding to [tracks]. Assume all tracks have
          * the correct [MediaItemTrack.parentKey] set
@@ -345,6 +420,25 @@ class CachedFileManager
         override val activeBookDownloads: LiveData<Set<String>>
             get() = _activeBookDownloads
 
+        // Written from Fetch's callback thread and the DB-update coroutine.
+        private val downloadProgress = java.util.concurrent.ConcurrentHashMap<String, Int>()
+        private val _bookDownloadProgress = MutableLiveData<Map<String, Int>>(emptyMap())
+        override val bookDownloadProgress: LiveData<Map<String, Int>>
+            get() = _bookDownloadProgress
+
+        private fun setProgress(
+            bookId: String,
+            percent: Int?,
+        ) {
+            val changed =
+                if (percent == null) {
+                    downloadProgress.remove(bookId) != null
+                } else {
+                    downloadProgress.put(bookId, percent) != percent
+                }
+            if (changed) _bookDownloadProgress.postValue(HashMap(downloadProgress))
+        }
+
         init {
             applicationContext.registerReceiver(
                 downloadListener,
@@ -368,6 +462,20 @@ class CachedFileManager
                             Timber.i("Starting downloading book with id: $bookId")
                         }
                         activeDownloads.add(bookId)
+                        if (!downloadProgress.containsKey(bookId)) {
+                            setProgress(bookId, groupProgressPercent(fetchGroup))
+                        }
+                    }
+
+                    override fun onProgress(
+                        groupId: Int,
+                        download: Download,
+                        etaInMilliSeconds: Long,
+                        downloadedBytesPerSecond: Long,
+                        fetchGroup: FetchGroup,
+                    ) {
+                        setProgress("plex:$groupId", groupProgressPercent(fetchGroup))
+                        super.onProgress(groupId, download, etaInMilliSeconds, downloadedBytesPerSecond, fetchGroup)
                     }
 
                     override fun onStarted(
@@ -395,11 +503,15 @@ class CachedFileManager
                         activeDownloads.remove(bookId)
                         val downloadSuccess =
                             downloads.all { it.error == Error.NONE } && downloads.isNotEmpty()
+                        if (!downloadSuccess) setProgress(bookId, null)
                         if (downloadSuccess) {
+                            // Hold at 100% until the DB says the book is cached.
+                            setProgress(bookId, 100)
                             scopeManager.launchSafe(
                                 tag = "update-cache-status-$bookId",
                                 onError = { error ->
                                     Timber.e("Failed to update cache status for book $bookId: ${error.message}")
+                                    setProgress(bookId, null)
                                 },
                             ) {
                                 withContext(Dispatchers.IO) {
@@ -412,11 +524,27 @@ class CachedFileManager
                                     Timber.i("Marked ${tracksForBook.size} tracks as cached for ($bookId)")
                                     bookRepository.updateCachedStatus(bookId, true)
                                 }
+                                setProgress(bookId, null)
                             }
                         }
                     }
                 },
             )
+        }
+
+        /**
+         * Book-level progress for [fetchGroup]: the mean of its tracks' percentages. Track sizes
+         * are often unknown (-1) until each track starts, so a byte-weighted figure would jump
+         * backwards as later tracks report their size; the mean only ever goes up.
+         */
+        private fun groupProgressPercent(fetchGroup: FetchGroup): Int {
+            val downloads = fetchGroup.downloads
+            if (downloads.isEmpty()) return 0
+            val sum =
+                downloads.sumOf {
+                    if (it.status == Status.COMPLETED) 100 else it.progress.coerceIn(0, 100)
+                }
+            return (sum / downloads.size).coerceIn(0, 100)
         }
 
         /**

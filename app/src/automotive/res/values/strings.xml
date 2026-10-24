@@ -55,6 +55,17 @@
     <string name="car_settings_sync_now">Sync library now</string>
     <string name="car_settings_sync_started">Library sync started</string>
     <string name="car_settings_syncing">Syncing library…</string>
+    <string name="car_settings_storage">Downloads</string>
+    <string name="car_settings_storage_used">Downloaded books use %1$s</string>
+    <string name="car_settings_storage_empty">No downloaded books</string>
+    <string name="car_settings_storage_calculating">Calculating storage used…</string>
+    <string name="car_settings_delete_downloads">Delete all downloads</string>
+    <string name="car_settings_delete_downloads_size">Delete all downloads (%1$s)</string>
+    <string name="car_settings_deleting_downloads">Deleting downloads…</string>
+    <string name="car_settings_delete_downloads_confirm_title">Delete all downloads?</string>
+    <string name="car_settings_delete_downloads_confirm">This removes every downloaded audiobook file from this car and frees %1$s. Books will stream from your Plex server until you download them again.</string>
+    <string name="car_settings_delete">Delete</string>
+    <string name="car_settings_delete_downloads_done">Deleted %1$d files, freed %2$s</string>
     <string name="car_settings_version">Version %1$s</string>
     <string name="car_seconds">%1$d seconds</string>
     <string name="car_speed_slower">Slower</string>
