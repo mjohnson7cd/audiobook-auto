@@ -492,6 +492,15 @@ class AudiobookMediaSessionCallback
             skipBackwards()
         }
 
+        override fun onSkipToQueueItem(id: Long) {
+            val chapters = playbackStateController.state.value.chapters
+            val chapter = chapters.getOrNull(id.toInt()) ?: return
+            val trackIndex = trackListStateManager.trackList.indexOfFirst { it.id == chapter.trackId }
+            if (trackIndex < 0) return
+            currentPlayer.seekTo(trackIndex, chapter.startTimeOffset)
+            progressUpdater.updateProgressWithoutParameters()
+        }
+
         private fun skipToNext() {
             currentPlayer.skipToNext(trackListStateManager, currentlyPlaying, progressUpdater)
         }
@@ -794,32 +803,6 @@ class AudiobookMediaSessionCallback
                 trackListStateManager.trackList = normalizedTracks
                 val metadataList = buildPlaylist(normalizedTracks, plexConfig)
 
-                // Car media (separate process) can't load the authenticated Plex thumb, so the queue
-                // (chapter list) gets the same content:// cover the now-playing art uses.
-                val carCoverUri =
-                    if (BuildConfig.IS_AUTOMOTIVE) CoverArtCache.getCachedCoverUri(appContext, bookId) else null
-                val queueItems =
-                    metadataList.zip(normalizedTracks).map { (metadata, track) ->
-                        val numericTrackId = track.id.removePrefix("plex:").toLongOrNull() ?: track.id.hashCode().toLong()
-                        val description =
-                            metadata.fullDescription.let { d ->
-                                if (carCoverUri == null) {
-                                    d
-                                } else {
-                                    android.support.v4.media.MediaDescriptionCompat.Builder()
-                                        .setMediaId(d.mediaId)
-                                        .setTitle(d.title)
-                                        .setSubtitle(d.subtitle)
-                                        .setDescription(d.description)
-                                        .setExtras(d.extras)
-                                        .setMediaUri(d.mediaUri)
-                                        .setIconUri(carCoverUri)
-                                        .build()
-                                }
-                            }
-                        MediaSessionCompat.QueueItem(description, numericTrackId)
-                    }
-                mediaSession.setQueue(queueItems)
 
                 // startingTrackId is already a String
                 check(
@@ -894,10 +877,38 @@ class AudiobookMediaSessionCallback
                     else -> throw NoWhenBranchMatchedException("Unknown media player")
                 }
 
+                // Chapters are normally fetched when the phone UI opens the book; car/Auto-only
+                // playback never does, so fetch them here once (Plex exposes embedded M4B chapters).
+                val bookWithChapters =
+                    if (book.chapters.isEmpty() && plexConfig.isConnected.value == true) {
+                        bookRepository.syncAudiobook(book, normalizedTracks)
+                        withContext(Dispatchers.IO) { bookRepository.getAudiobookAsync(bookId) } ?: book
+                    } else {
+                        book
+                    }
+
                 // Load the audiobook into PlaybackStateController
-                val chapters = book.chapters.ifEmpty { tracks.asChapterList(book.id) }
+                val chapters = bookWithChapters.chapters.ifEmpty { tracks.asChapterList(book.id) }
+
+                // Car media (separate process) can't load the authenticated Plex thumb, so the queue
+                // (chapter list) gets the same content:// cover the now-playing art uses.
+                val carCoverUri =
+                    if (BuildConfig.IS_AUTOMOTIVE) CoverArtCache.getCachedCoverUri(appContext, bookId) else null
+                // One queue item per chapter (queue id = chapter index), so the car's queue is the chapter list.
+                val queueItems =
+                    chapters.mapIndexed { i, chapter ->
+                        val description =
+                            android.support.v4.media.MediaDescriptionCompat.Builder()
+                                .setMediaId("${book.id}/chapter/$i")
+                                .setTitle(chapter.title)
+                                .setSubtitle(chapter.durationStr)
+                                .setIconUri(carCoverUri ?: metadataList.firstOrNull()?.description?.iconUri)
+                                .build()
+                        MediaSessionCompat.QueueItem(description, i.toLong())
+                    }
+                mediaSession.setQueue(queueItems)
                 playbackStateController.loadAudiobook(
-                    audiobook = book,
+                    audiobook = bookWithChapters,
                     tracks = normalizedTracks,
                     chapters = chapters,
                     startTrackIndex = startingTrackIndex,
@@ -906,7 +917,7 @@ class AudiobookMediaSessionCallback
 
                 // Keep calling currentlyPlaying.update() for backward compatibility
                 currentlyPlaying.update(
-                    book = book,
+                    book = bookWithChapters,
                     tracks = normalizedTracks,
                     track = startingTrack.copy(progress = trackListStateManager.currentTrackProgress),
                 )
@@ -963,7 +974,7 @@ class AudiobookMediaSessionCallback
                     loadedNetworkTracks.getDuration(),
                     loadedNetworkTracks.size,
                 )
-                bookRepository.syncAudiobook(audiobook, tracks)
+                bookRepository.syncAudiobook(audiobook, loadedNetworkTracks)
                 playBook(bookId, extras, playWhenReady)
                 Timber.d("[VoiceCommandTrace] handlePlayBookWithNoTracks EXIT - success, retrying playBook")
             } else {

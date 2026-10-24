@@ -697,6 +697,8 @@ class MediaPlayerService :
                 .setBufferedPosition(bufferedPosition)
                 .setState(playbackState, position, playbackSpeed)
                 .setExtras(extras)
+                // Queue ids are chapter indices (see playBook), so this highlights the playing chapter.
+                .setActiveQueueItemId(playbackStateController.state.value.currentChapterIndex.toLong())
 
         sessionCustomActions.forEach(builder::addCustomAction)
         sessionErrorMessage?.let {
@@ -717,7 +719,8 @@ class MediaPlayerService :
             PlaybackStateCompat.ACTION_PREPARE_FROM_MEDIA_ID or
             PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH or
             PlaybackStateCompat.ACTION_PREPARE_FROM_SEARCH or
-            PlaybackStateCompat.ACTION_SET_PLAYBACK_SPEED
+            PlaybackStateCompat.ACTION_SET_PLAYBACK_SPEED or
+            PlaybackStateCompat.ACTION_SKIP_TO_QUEUE_ITEM
 
     private fun buildEmptyPlaybackState(): PlaybackStateCompat {
         val builder =
