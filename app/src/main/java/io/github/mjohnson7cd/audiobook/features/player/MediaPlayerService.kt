@@ -123,6 +123,25 @@ class MediaPlayerService :
     lateinit var prefsRepo: PrefsRepo
 
     @Inject
+    lateinit var cachedFileManager: io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager
+
+    // AAOS only: drives the download button's icon in the car overflow menu.
+    private var carDownloadStatus = io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus.NOT_CACHED
+    private var carActiveDownloads: Set<String> = emptySet()
+    private var carCachedBookIds: Set<String> = emptySet()
+    private val carActiveDownloadsObserver =
+        Observer<Set<String>> {
+            carActiveDownloads = it.toSet()
+            refreshCarDownloadStatus()
+        }
+    private val carCachedBooksObserver =
+        Observer<List<io.github.mjohnson7cd.audiobook.data.model.Audiobook>> { books ->
+            carCachedBookIds = books.map { it.id }.toSet()
+            refreshCarDownloadStatus()
+        }
+    private val carCachedBooksLiveData by lazy { bookRepository.getCachedAudiobooks() }
+
+    @Inject
     lateinit var plexPrefs: PlexPrefsRepo
 
     @Inject
@@ -366,6 +385,11 @@ class MediaPlayerService :
         librarySyncRepository.isRefreshing.observeForever(librarySyncObserver)
         if (BuildConfig.IS_AUTOMOTIVE) {
             plexConfig.isConnected.observeForever(carLibrarySyncObserver)
+            cachedFileManager.activeBookDownloads.observeForever(carActiveDownloadsObserver)
+            carCachedBooksLiveData.observeForever(carCachedBooksObserver)
+            serviceScope.launch(Injector.get().unhandledExceptionHandler()) {
+                currentlyPlaying.book.collect { refreshCarDownloadStatus() }
+            }
         }
     }
 
@@ -382,8 +406,24 @@ class MediaPlayerService :
     }
 
     private fun updateCustomActions() {
-        sessionCustomActions = buildCustomActions(prefsRepo)
+        sessionCustomActions = buildCustomActions(prefsRepo, carDownloadStatus)
         updateSessionPlaybackState()
+    }
+
+    private fun refreshCarDownloadStatus() {
+        val bookId = currentlyPlaying.book.value.id
+        val status =
+            when {
+                bookId in carActiveDownloads -> io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus.CACHING
+                bookId in carCachedBookIds || currentlyPlaying.book.value.isCached ->
+                    io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus.CACHED
+                else -> io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus.NOT_CACHED
+            }
+        if (status != carDownloadStatus) {
+            Timber.i("Car download status for $bookId: $carDownloadStatus -> $status")
+            carDownloadStatus = status
+            updateCustomActions()
+        }
     }
 
     private fun setSessionCustomErrorMessage(message: String?) {
@@ -875,6 +915,10 @@ class MediaPlayerService :
         plexLoginRepo.loginEvent.removeObserver(loginStateObserver)
         librarySyncRepository.isRefreshing.removeObserver(librarySyncObserver)
         plexConfig.isConnected.removeObserver(carLibrarySyncObserver)
+        if (BuildConfig.IS_AUTOMOTIVE) {
+            cachedFileManager.activeBookDownloads.removeObserver(carActiveDownloadsObserver)
+            carCachedBooksLiveData.removeObserver(carCachedBooksObserver)
+        }
 
         // Send one last update to local/remote servers that playback has stopped
         val metadata = mediaController.metadata

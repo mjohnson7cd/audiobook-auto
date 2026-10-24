@@ -110,6 +110,9 @@ class VoiceSearchFallbackTest {
     private lateinit var plexProgressReporter: io.github.mjohnson7cd.audiobook.data.sources.plex.PlexProgressReporter
 
     @RelaxedMockK
+    private lateinit var cachedFileManager: io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager
+
+    @RelaxedMockK
     private lateinit var defaultPlayer: ExoPlayer
 
     private lateinit var testScope: TestScope
@@ -160,6 +163,7 @@ class VoiceSearchFallbackTest {
                 voiceCommandBridgeAudio = voiceCommandBridgeAudio,
                 coroutineExceptionHandler = testExceptionHandler,
                 plexProgressReporter = plexProgressReporter,
+                cachedFileManager = cachedFileManager,
                 defaultPlayer = defaultPlayer,
             )
     }

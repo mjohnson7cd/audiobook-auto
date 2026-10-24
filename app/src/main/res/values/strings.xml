@@ -91,6 +91,12 @@
     <string name="failed_to_sync_progress">Failed to sync progress</string>
     <string name="premium_required_offline_playback">Premium is required for offline playback!</string>
     <string name="unable_to_cache_audiobook">Unable to download audiobook- not connected to server</string>
+    <string name="car_download_started">Downloading %1$s</string>
+    <string name="car_download_already_downloaded">%1$s is already downloaded</string>
+    <string name="car_download_in_progress">%1$s is already downloading</string>
+    <string name="car_download_nothing_playing">Nothing is playing to download</string>
+    <string name="car_download_no_tracks">No tracks found for %1$s</string>
+    <string name="car_download_failed">Download failed for %1$s</string>
     <string name="force_sync">Force Sync</string>
     <string name="prompt_force_sync">Force sync with network? Local progress will be lost</string>
     <string name="progress_sync_successful">Sync successful!</string>

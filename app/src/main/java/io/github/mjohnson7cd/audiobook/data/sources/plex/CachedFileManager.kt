@@ -38,9 +38,29 @@ interface ICachedFileManager {
 
     fun cancelGroup(id: String)
 
+    /** Outcome of [downloadTracks] once the requests have been handed to Fetch (or not). */
+    sealed class EnqueueResult {
+        /** [trackCount] track downloads were queued. */
+        data class Started(val trackCount: Int) : EnqueueResult()
+
+        /** Every track file is already on disk; nothing was queued. */
+        object AlreadyDownloaded : EnqueueResult()
+
+        /** The book has no tracks in the local DB, so there is nothing to download. */
+        object NoTracks : EnqueueResult()
+
+        data class Failed(val reason: String) : EnqueueResult()
+    }
+
+    /**
+     * Queues downloads for every not-yet-cached track of [bookId]. [onResult] is invoked on the
+     * main thread once the outcome is known, so callers without a UI (e.g. the car media
+     * session) can give the user feedback.
+     */
     fun downloadTracks(
         bookId: String,
         bookTitle: String,
+        onResult: (EnqueueResult) -> Unit = {},
     )
 
     suspend fun uncacheAllInLibrary(): Int
@@ -130,17 +150,34 @@ class CachedFileManager
         override fun downloadTracks(
             bookId: String,
             bookTitle: String,
+            onResult: (ICachedFileManager.EnqueueResult) -> Unit,
         ) {
             // Add downloads to Fetch
             scopeManager.launchSafe(
                 tag = "download-book-$bookId",
                 onError = { error ->
                     Timber.e("Failed to download book $bookId: ${error.message}")
+                    onResult(ICachedFileManager.EnqueueResult.Failed(error.message ?: error.toString()))
                 },
             ) {
-                fetch.enqueue(makeRequests(bookId, bookTitle)) {
+                if (trackRepository.getTracksForAudiobookAsync(bookId).isEmpty()) {
+                    Timber.w("No tracks in DB for book $bookId, nothing to download")
+                    onResult(ICachedFileManager.EnqueueResult.NoTracks)
+                    return@launchSafe
+                }
+                val requests = makeRequests(bookId, bookTitle)
+                if (requests.isEmpty()) {
+                    // All files are on disk but the book wasn't flagged cached (e.g. a finish
+                    // listener that never ran). Fix the flags instead of enqueueing nothing,
+                    // which would never fire onFinished.
+                    Timber.i("All tracks for $bookId already on disk, reconciling cache flags")
+                    refreshDownloadedStatusForBook(bookId)
+                    onResult(ICachedFileManager.EnqueueResult.AlreadyDownloaded)
+                    return@launchSafe
+                }
+                fetch.enqueue(requests) { results ->
                     val errors =
-                        it.mapNotNull { (_, error) ->
+                        results.mapNotNull { (_, error) ->
                             if (error == Error.NONE) null else error
                         }
                     if (BuildConfig.DEBUG && errors.isNotEmpty()) {
@@ -152,6 +189,10 @@ class CachedFileManager
                     }
                     if (errors.isEmpty()) {
                         DownloadNotificationWorker.start()
+                        onResult(ICachedFileManager.EnqueueResult.Started(requests.size))
+                    } else {
+                        Timber.e("Error enqueuing download for $bookId: $errors")
+                        onResult(ICachedFileManager.EnqueueResult.Failed(errors.joinToString()))
                     }
                 }
             }

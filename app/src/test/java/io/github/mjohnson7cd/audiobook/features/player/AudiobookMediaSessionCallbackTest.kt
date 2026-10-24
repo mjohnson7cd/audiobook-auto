@@ -120,6 +120,9 @@ class AudiobookMediaSessionCallbackTest {
     @RelaxedMockK
     private lateinit var plexProgressReporter: io.github.mjohnson7cd.audiobook.data.sources.plex.PlexProgressReporter
 
+    @RelaxedMockK
+    private lateinit var cachedFileManager: io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager
+
     @MockK
     private lateinit var mockPlayer: Player
 
@@ -169,6 +172,7 @@ class AudiobookMediaSessionCallbackTest {
                 voiceCommandBridgeAudio = voiceCommandBridgeAudio,
                 coroutineExceptionHandler = testExceptionHandler,
                 plexProgressReporter = plexProgressReporter,
+                cachedFileManager = cachedFileManager,
                 defaultPlayer = defaultPlayer,
             )
 

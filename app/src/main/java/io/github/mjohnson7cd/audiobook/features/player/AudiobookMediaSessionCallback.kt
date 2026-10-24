@@ -22,6 +22,7 @@ import io.github.mjohnson7cd.audiobook.data.local.IBookRepository
 import io.github.mjohnson7cd.audiobook.data.local.ITrackRepository
 import io.github.mjohnson7cd.audiobook.data.local.PrefsRepo
 import io.github.mjohnson7cd.audiobook.data.model.*
+import io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager
 import io.github.mjohnson7cd.audiobook.data.sources.plex.IPlexLoginRepo
 import io.github.mjohnson7cd.audiobook.data.sources.plex.IPlexLoginRepo.LoginState.*
 import io.github.mjohnson7cd.audiobook.data.sources.plex.PlexConfig
@@ -64,6 +65,7 @@ class AudiobookMediaSessionCallback
         private val coroutineExceptionHandler: CoroutineExceptionHandler,
         private val voiceCommandBridgeAudio: VoiceCommandBridgeAudio,
         private val plexProgressReporter: io.github.mjohnson7cd.audiobook.data.sources.plex.PlexProgressReporter,
+        private val cachedFileManager: ICachedFileManager,
         defaultPlayer: ExoPlayer,
     ) : MediaSessionCompat.Callback() {
         // Default to ExoPlayer to prevent having a nullable field
@@ -626,12 +628,60 @@ class AudiobookMediaSessionCallback
                 SKIP_TO_PREVIOUS_STRING -> skipToPrevious()
                 // MediaPlayerService's prefs listener applies the speed and refreshes the icon.
                 PLAYBACK_SPEED_STRING -> prefsRepo.playbackSpeed = nextPlaybackSpeed(prefsRepo.playbackSpeed)
-                DOWNLOAD_BOOK_STRING -> {
-                    Timber.i("Download book requested from car UI - not yet implemented")
-                    // TODO: Trigger download for current audiobook
-                    // cachedFileManager.downloadTracks(currentlyPlaying.tracks)
+                DOWNLOAD_BOOK_STRING -> downloadCurrentBook()
+            }
+        }
+
+        /**
+         * Car overflow "Download" action: queues every track of the playing book through the same
+         * Fetch pipeline the phone's details screen uses (Plex `?download=1` + X-Plex-Token), and
+         * reports the outcome with a toast since the car UI has no other place to show it.
+         * Progress/completion is surfaced by [DownloadNotificationWorker]; the book's isCached flag
+         * flips when the Fetch group finishes.
+         */
+        private fun downloadCurrentBook() {
+            val book = currentlyPlaying.book.value
+            if (book.id == NO_AUDIOBOOK_FOUND_ID) {
+                Timber.w("Download requested with nothing playing")
+                showCarToast(appContext.getString(io.github.mjohnson7cd.audiobook.R.string.car_download_nothing_playing))
+                return
+            }
+            val title = book.title
+            when {
+                !prefsRepo.isPremium ->
+                    showCarToast(appContext.getString(io.github.mjohnson7cd.audiobook.R.string.premium_required_offline_playback))
+                book.isCached ->
+                    showCarToast(appContext.getString(io.github.mjohnson7cd.audiobook.R.string.car_download_already_downloaded, title))
+                book.id in (cachedFileManager.activeBookDownloads.value ?: emptySet()) ->
+                    showCarToast(appContext.getString(io.github.mjohnson7cd.audiobook.R.string.car_download_in_progress, title))
+                plexConfig.isConnected.value != true ->
+                    showCarToast(appContext.getString(io.github.mjohnson7cd.audiobook.R.string.unable_to_cache_audiobook))
+                else -> {
+                    Timber.i("Car UI: downloading \"$title\" (${book.id})")
+                    cachedFileManager.downloadTracks(book.id, title) { result ->
+                        val msg =
+                            when (result) {
+                                is ICachedFileManager.EnqueueResult.Started -> {
+                                    Timber.i("Car UI: queued ${result.trackCount} tracks for ${book.id}")
+                                    appContext.getString(io.github.mjohnson7cd.audiobook.R.string.car_download_started, title)
+                                }
+                                ICachedFileManager.EnqueueResult.AlreadyDownloaded ->
+                                    appContext.getString(io.github.mjohnson7cd.audiobook.R.string.car_download_already_downloaded, title)
+                                ICachedFileManager.EnqueueResult.NoTracks ->
+                                    appContext.getString(io.github.mjohnson7cd.audiobook.R.string.car_download_no_tracks, title)
+                                is ICachedFileManager.EnqueueResult.Failed -> {
+                                    Timber.e("Car UI: download failed for ${book.id}: ${result.reason}")
+                                    appContext.getString(io.github.mjohnson7cd.audiobook.R.string.car_download_failed, title)
+                                }
+                            }
+                        showCarToast(msg)
+                    }
                 }
             }
+        }
+
+        private fun showCarToast(message: String) {
+            android.widget.Toast.makeText(appContext, message, android.widget.Toast.LENGTH_LONG).show()
         }
 
         /**

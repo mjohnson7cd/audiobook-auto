@@ -10,6 +10,7 @@ import android.view.KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD
 import io.github.mjohnson7cd.audiobook.BuildConfig
 import io.github.mjohnson7cd.audiobook.R
 import io.github.mjohnson7cd.audiobook.data.local.PrefsRepo
+import io.github.mjohnson7cd.audiobook.data.sources.plex.ICachedFileManager.CacheStatus
 
 // Order matters: with no ACTION_SKIP_TO_NEXT/PREVIOUS, car UIs put the first two custom actions
 // next to play (-10s | play | +30s). AAOS's ControlBar then fills the outer-left slot with the next
@@ -17,12 +18,15 @@ import io.github.mjohnson7cd.audiobook.data.local.PrefsRepo
 // lands in the overflow menu: download, prev chapter, next chapter, speed.
 // The trailing spacer keeps ⋮ in its slot while the car briefly re-lays out the bar on each state
 // push (it drops -10/+30 then re-adds them); without it the open overflow row goes blank.
-fun buildCustomActions(prefsRepo: PrefsRepo): List<PlaybackStateCompat.CustomAction> =
+fun buildCustomActions(
+    prefsRepo: PrefsRepo,
+    downloadStatus: CacheStatus = CacheStatus.NOT_CACHED,
+): List<PlaybackStateCompat.CustomAction> =
     listOfNotNull(
         makeSkipBackward(prefsRepo),
         makeSkipForward(prefsRepo),
         if (BuildConfig.IS_AUTOMOTIVE) CAR_SLOT_SPACER else null,
-        if (BuildConfig.IS_AUTOMOTIVE) DOWNLOAD_BOOK else null,
+        if (BuildConfig.IS_AUTOMOTIVE) makeDownloadBook(downloadStatus) else null,
         SKIP_TO_PREVIOUS,
         SKIP_TO_NEXT,
         makePlaybackSpeed(prefsRepo),
@@ -30,12 +34,22 @@ fun buildCustomActions(prefsRepo: PrefsRepo): List<PlaybackStateCompat.CustomAct
     )
 
 const val DOWNLOAD_BOOK_STRING = "Download book"
-val DOWNLOAD_BOOK: PlaybackStateCompat.CustomAction =
-    PlaybackStateCompat.CustomAction.Builder(
-        DOWNLOAD_BOOK_STRING,
-        "Download for offline",
-        R.drawable.ic_cloud_download_white,
-    ).build()
+
+/**
+ * Car overflow download button. The icon/label track the playing book's download state, which is
+ * the only feedback that reliably shows on AAOS (toasts from the media service are queued but not
+ * drawn while the car media app is in front). The action id stays [DOWNLOAD_BOOK_STRING] in every
+ * state; the callback decides what a tap means.
+ */
+fun makeDownloadBook(status: CacheStatus): PlaybackStateCompat.CustomAction {
+    val (label, icon) =
+        when (status) {
+            CacheStatus.NOT_CACHED -> "Download for offline" to R.drawable.ic_cloud_download_white
+            CacheStatus.CACHING -> "Downloading…" to R.drawable.ic_sync
+            CacheStatus.CACHED -> "Downloaded" to R.drawable.ic_cloud_done_white
+        }
+    return PlaybackStateCompat.CustomAction.Builder(DOWNLOAD_BOOK_STRING, label, icon).build()
+}
 
 /** Second invisible no-op action; see the ordering note on [buildCustomActions]. */
 val CAR_SLOT_SPACER_END: PlaybackStateCompat.CustomAction =
